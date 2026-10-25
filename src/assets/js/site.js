@@ -18,7 +18,7 @@
   if (motion) {
     G.registerPlugin(ST);
     if (window.Lenis) {
-      lenis = new Lenis({ duration: 1.15, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), smoothWheel: true, touchMultiplier: 1.4 });
+      lenis = new Lenis({ duration: 1.35, wheelMultiplier: 0.9, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), smoothWheel: true, touchMultiplier: 1.4 });
       lenis.on('scroll', ST.update);
       G.ticker.add((t) => lenis.raf(t * 1000));
       G.ticker.lagSmoothing(0);
@@ -73,11 +73,21 @@
     if (!motion) return;
     const hero = $('[data-hero]');
     if (hero) {
-      const tl = G.timeline({ defaults: { ease: 'expo.out' } });
-      tl.to($$('.hn-1 .ch > span', hero), { y: 0, duration: 1.4, stagger: 0.07 }, 0)
-        .fromTo('[data-hero-portrait]', { opacity: 0, y: 120, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 1.6 }, 0.15)
-        .to($$('.hn-2 .ch > span', hero), { y: 0, duration: 1.3, stagger: 0.045 }, 0.35)
-        .fromTo('[data-hero-ui]', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 1.2, stagger: 0.1 }, 0.6);
+      // like the reference: the orange field settles first, the name sharpens out of a blur,
+      // then the portrait and cards arrive in stages
+      const tl = G.timeline({ defaults: { ease: 'power3.out' } });
+      tl.to($$('.hero-bg .blob', hero), { opacity: (i) => (i === 2 ? 0.35 : 0.7), duration: 1.6, stagger: 0.15 }, 0)
+        .to('.hero-grid', { opacity: 1, duration: 1.4 }, 0.1)
+        .fromTo($$('.hn-1 .ch > span', hero), { opacity: 0, filter: 'blur(26px)', y: 30, scale: 1.08 }, { opacity: 1, filter: 'blur(0px)', y: 0, scale: 1, duration: 1.5, stagger: 0.09 }, 0.35)
+        .fromTo('[data-hero-portrait]', { opacity: 0, filter: 'blur(18px)', y: 70, scale: 1.06 }, { opacity: 1, filter: 'blur(0px)', y: 0, scale: 1, duration: 1.8 }, 0.75)
+        .fromTo($$('.hn-2 .ch > span', hero), { opacity: 0, filter: 'blur(20px)', y: 20 }, { opacity: 1, filter: 'blur(0px)', y: 0, duration: 1.3, stagger: 0.06 }, 1.0)
+        .fromTo('[data-hero-ui]', { opacity: 0, y: 34, filter: 'blur(8px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.2, stagger: 0.12 }, 1.2)
+        .add(() => {
+          // portrait keeps breathing so the hero never sits still
+          G.to('.hp-in img', { y: -12, rotate: 0.6, duration: 3.2, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+          G.to('.hc-proj .hc-img img', { scale: 1.08, duration: 5, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+          G.set([...$$('.hn .ch > span', hero), '[data-hero-portrait]', ...$$('[data-hero-ui]', hero)], { filter: 'none' });
+        });
     }
     const ph = $('[data-ph]');
     if (ph) G.to($$('.ph-h .ch > span', ph), { y: 0, duration: 1.3, stagger: 0.04, delay: 0.05 });
@@ -297,7 +307,7 @@
     const p = { x: innerWidth / 2, y: innerHeight / 2 }, r = { ...p };
     const qx = G.quickSetter(dot, 'x', 'px'), qy = G.quickSetter(dot, 'y', 'px'), rx = G.quickSetter(ring, 'x', 'px'), ry = G.quickSetter(ring, 'y', 'px');
     addEventListener('pointermove', (e) => { p.x = e.clientX; p.y = e.clientY; qx(p.x); qy(p.y); cur.classList.remove('is-hidden'); }, { passive: true });
-    G.ticker.add(() => { r.x += (p.x - r.x) * 0.18; r.y += (p.y - r.y) * 0.18; rx(r.x); ry(r.y); });
+    G.ticker.add(() => { r.x += (p.x - r.x) * 0.14; r.y += (p.y - r.y) * 0.14; rx(r.x); ry(r.y); });
     document.addEventListener('pointerover', (e) => {
       const t = e.target.closest('[data-cursor-text]');
       const l = e.target.closest('a, button, .sk, label, .faq-it button');
@@ -306,6 +316,8 @@
       if (t) lab.textContent = t.dataset.cursorText;
     });
     document.addEventListener('pointerleave', () => cur.classList.add('is-hidden'));
+    addEventListener('pointerdown', () => cur.classList.add('is-down'));
+    addEventListener('pointerup', () => cur.classList.remove('is-down'));
   }
 
   // ---------- page-specific scenes (rebuilt on breakpoint change) ----------
