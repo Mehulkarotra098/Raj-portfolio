@@ -365,13 +365,13 @@
         },
       });
       cards.forEach((c) => {
-        if ($('[data-wk-par] > img', c)) G.fromTo($('[data-wk-par]', c), { xPercent: -6 }, { xPercent: 6, ease: 'none', scrollTrigger: { trigger: c, containerAnimation: tween, start: 'left right', end: 'right left', scrub: true } });
+        G.fromTo($('[data-wk-par]', c), { scale: 1.12 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: c, containerAnimation: tween, start: 'left right', end: 'left 30%', scrub: true } });
         G.fromTo(c, { rotate: 2.5, y: 40 }, { rotate: 0, y: 0, ease: 'none', scrollTrigger: { trigger: c, containerAnimation: tween, start: 'left right', end: 'left 40%', scrub: true } });
       });
     });
     mm.add('(max-width: 860px)', () => {
       cards.forEach((c) => {
-        if ($('[data-wk-par] > img', c)) G.fromTo($('[data-wk-par]', c), { yPercent: -6 }, { yPercent: 6, ease: 'none', scrollTrigger: { trigger: c, start: 'top bottom', end: 'bottom top', scrub: true } });
+        G.fromTo($('[data-wk-par]', c), { scale: 1.12 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: c, start: 'top bottom', end: 'top 35%', scrub: true } });
         G.from(c, { y: 60, opacity: 0, duration: 1.2, scrollTrigger: { trigger: c, start: 'top 90%', once: true } });
       });
     });
@@ -430,7 +430,7 @@
   curtain();
   addEventListener('resize', () => { curtain(); });
   G.to($$('.ftr-line > span'), { y: 0, duration: 1.3, stagger: 0.1, scrollTrigger: { trigger: page, start: 'bottom 75%', once: true } });
-  G.fromTo($$('.ftr-word span'), { yPercent: 100 }, { yPercent: 0, stagger: 0.03, ease: 'none', scrollTrigger: { trigger: page, start: 'bottom 60%', end: 'bottom bottom', scrub: true } });
+  G.fromTo($$('.ftr-word span'), { yPercent: 40, opacity: 0 }, { yPercent: 0, opacity: 1, stagger: 0.03, ease: 'none', scrollTrigger: { trigger: page, start: 'bottom 70%', end: 'bottom bottom', scrub: true } });
   mm.add('(min-width: 861px)', () => { G.fromTo('.ftr-in', { yPercent: -25 }, { yPercent: 0, ease: 'none', scrollTrigger: { trigger: page, start: 'bottom bottom+=' + innerHeight * 0.6, end: 'bottom bottom', scrub: true } }); });
 
   // refresh after fonts/images settle

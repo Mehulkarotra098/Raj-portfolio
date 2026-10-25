@@ -287,7 +287,7 @@ function home() {
 <section class="mani sec" data-mani>
   <div class="wrap">
     ${label('About Raj')}
-    <p class="mani-text" data-fill>I’m a full-stack developer who builds products from the ground up <span class="mani-pill p1" aria-hidden="true">${img('raj-face.webp', '', '', '90px')}</span> designing an API, wiring up authentication, deploying a service or polishing the frontend <span class="mani-pill p2" aria-hidden="true">{ }</span> I care about code that holds up in production and interfaces that don’t make people work harder than they need to.</p>
+    <p class="mani-text" data-fill>I’m a full-stack developer who builds products from the ground up <span class="mani-pill p1" aria-hidden="true">${ast()}</span> designing an API, wiring up authentication, deploying a service or polishing the frontend <span class="mani-pill p2" aria-hidden="true">{ }</span> I care about code that holds up in production and interfaces that don’t make people work harder than they need to.</p>
     <div class="stats">
       ${[[2, '+', 'Years in production', 'Full-time at Apex36 since Jul 2024'], [projects.length, '', 'Products shipped', 'NeoHire, Indian Jobs, Hunter, Swiggy agent'], [person.contributions, '', 'GitHub contributions', 'In the last year'], [211, '', 'Occupations visualised', 'In Indian Jobs, on one page']].map(([n, s, t, d]) => `
       <div class="stat" data-fade><p class="stat-n"><span data-count="${n}">0</span>${s}</p><p class="stat-t">${t}</p><p class="stat-d">${d}</p></div>`).join('')}
@@ -307,11 +307,10 @@ function home() {
       <article class="wk" data-wk>
         <a class="wk-media" href="${p.live || p.code}" target="_blank" rel="noopener" data-cursor-text="${p.live ? 'Visit' : 'Code'}" aria-label="${p.name}: ${p.live ? 'open the live site' : 'view the code'}">
           <span class="wk-media-in" data-wk-par>${projMedia(p)}</span>
-          <span class="wk-kind">${p.kind}</span>
         </a>
         <div class="wk-info">
           <p class="wk-n">0${i + 1}</p>
-          <div class="wk-txt"><h3>${p.name}</h3><p class="wk-line">${p.line}</p></div>
+          <div class="wk-txt"><span class="wk-kind">${p.kind}</span><h3>${p.name}</h3><p class="wk-line">${p.line}</p></div>
           <ul class="wk-stack">${p.stack.map(([a]) => `<li>${a}</li>`).join('')}</ul>
         </div>
       </article>`).join('')}
@@ -360,7 +359,7 @@ ${timeline()}
 
 <section class="quote sec">
   <div class="wrap quote-in">
-    <figure class="quote-img" data-reveal-media><span data-par="12">${img('raj-portrait-800.webp', 'Illustrated portrait of Raj Chauhan', '', '(max-width: 760px) 70vw, 30vw')}</span></figure>
+    <figure class="quote-img" data-reveal-media><span data-par="5">${img('raj-hoodie-800.webp', 'Illustrated portrait of Raj Chauhan in a cream hoodie', '', '(max-width: 760px) 80vw, 34vw')}</span></figure>
     <blockquote>
       <p class="quote-t" data-fill>“Good software should feel simple on the surface and stay dependable underneath.”</p>
       <footer data-fade><strong>${person.name}</strong> · A principle I build by</footer>
@@ -421,7 +420,7 @@ ${projects.map((p, i) => `
       ${H(p.name.toUpperCase(), 'h2', 'cs-h')}
     </div>
     <a class="cs-media" href="${p.live || p.code}" target="_blank" rel="noopener" data-cursor-text="${p.live ? 'Visit' : 'Code'}" data-reveal-media aria-label="${p.name}: ${p.live ? 'open the live site' : 'view the code'}">
-      <span class="cs-media-in" data-par="10">${projMedia(p)}</span>
+      <span class="cs-media-in">${projMedia(p)}</span>
     </a>
     <div class="cs-body">
       <p class="cs-line" data-fade>${p.line}</p>

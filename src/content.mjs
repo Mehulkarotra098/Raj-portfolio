@@ -17,7 +17,7 @@ export const person = {
   ],
   social: [
     { label: 'GitHub', href: 'https://github.com/Raj3019', handle: '@Raj3019' },
-    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/backenddeveloperrajchauhan/', handle: 'in/backenddeveloperrajchauhan' },
+    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/backenddeveloperrajchauhan/', handle: 'Raj Chauhan' },
     { label: 'X', href: 'https://x.com/aksharaj369', handle: '@aksharaj369' },
   ],
   contributions: 329,
