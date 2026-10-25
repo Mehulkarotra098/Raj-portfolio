@@ -133,3 +133,12 @@ export const faq = [
   ['Where can I see your code?', 'Most of my projects are public on GitHub at github.com/Raj3019, with live links for NeoHire and Indian Jobs.'],
   ['How do we start?', 'Send a short note about the product or role and what you need. I’ll reply by email with questions or next steps.'],
 ];
+
+// Skills shown with logos. Every tool here appears on his site or in his shipped projects.
+export const skillGroups = [
+  { title: 'Frontend', note: 'Interfaces people don’t have to fight', items: ['typescript', 'javascript', 'react', 'nextdotjs', 'tailwindcss', 'vite'] },
+  { title: 'Backend', note: 'APIs, auth and business logic', items: ['nodedotjs', 'express', 'python', 'fastapi'] },
+  { title: 'Data', note: 'Schemas that stay sane', items: ['postgresql', 'mongodb'] },
+  { title: 'Cloud & DevOps', note: 'Quiet, dependable deploys', items: ['amazonwebservices', 'awslambda', 'docker', 'vercel', 'git', 'github'] },
+  { title: 'AI', note: 'Practical LLM features', items: ['openai', 'claude', 'groq'] },
+];
