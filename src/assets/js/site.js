@@ -4,7 +4,9 @@
   const html = document.documentElement;
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Motion is on by default (it is the point of this site); visitors can switch it off in the footer.
+  let pref = null; try { pref = localStorage.getItem('rc-motion'); } catch (e) { /* storage blocked */ }
+  const reduce = pref === 'off';
   const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
   const G = window.gsap, ST = window.ScrollTrigger;
   const motion = !reduce && G && ST;
@@ -132,6 +134,11 @@
     if (id.length > 1 && $(id)) { e.preventDefault(); scrollTo(id); }
   }));
   $('[data-totop]')?.addEventListener('click', () => scrollTo(0, { offset: 0, duration: 2 }));
+  $$('[data-motion-toggle]').forEach((b) => {
+    b.textContent = reduce ? 'Motion: off' : 'Motion: on';
+    b.setAttribute('aria-pressed', String(!reduce));
+    b.addEventListener('click', () => { try { localStorage.setItem('rc-motion', reduce ? 'on' : 'off'); } catch (e) { /* ignore */ } location.reload(); });
+  });
 
   // ---------- FAQ ----------
   $$('[data-faq]').forEach((list) => {

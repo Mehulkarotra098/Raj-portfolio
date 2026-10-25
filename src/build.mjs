@@ -134,7 +134,7 @@ const footer = () => `
       <button class="ftr-totop" type="button" data-totop>Back to top <span>↑</span></button>
     </div>
     <p class="ftr-word" aria-hidden="true">${'RAJ CHAUHAN'.split('').map((c) => `<span>${c === ' ' ? '&nbsp;' : c}</span>`).join('')}</p>
-    <div class="ftr-bot"><span>© ${YEAR} ${person.name}</span><span>Built with care, code, and curiosity</span><span>From API to interface</span></div>
+    <div class="ftr-bot"><span>© ${YEAR} ${person.name}</span><span>Built with care, code, and curiosity</span><button type="button" class="motion-t" data-motion-toggle aria-pressed="true">Motion: on</button></div>
   </div>
 </footer>`;
 
@@ -157,7 +157,7 @@ function layout({ page, title, desc, body, root }) {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{R}assets/css/site.css?v=${V}">
-<script>document.documentElement.classList.add('js');try{if(sessionStorage.getItem('rc-seen'))document.documentElement.classList.add('seen')}catch(e){}</script>
+<script>document.documentElement.classList.add('js');try{if(sessionStorage.getItem('rc-seen'))document.documentElement.classList.add('seen');if(localStorage.getItem('rc-motion')==='off')document.documentElement.classList.add('no-motion')}catch(e){}</script>
 <script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'Person', name: person.name, jobTitle: person.role, email: 'mailto:' + person.email, url: 'https://mehulkarotra098.github.io/Raj-portfolio/', sameAs: [person.site, ...person.social.map((s) => s.href)], worksFor: { '@type': 'Organization', name: 'Apex36 Technology Service LLP' }, alumniOf: education.map((e) => ({ '@type': 'CollegeOrUniversity', name: e.org })), knowsAbout: stack })}</script>
 </head>
 <body class="pg-${page.toLowerCase()}">
