@@ -1,0 +1,25 @@
+name: Capture project media
+# Grabs project screenshots that the build container can't reach.
+# Run manually (Actions → Capture project media → Run) whenever a project changes.
+on:
+  workflow_dispatch:
+  push:
+    paths: ['tools/capture.mjs', '.github/workflows/capture.yml']
+permissions:
+  contents: write
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm i --no-save playwright@1.48.2 && npx playwright install --with-deps chromium
+      - run: node tools/capture.mjs
+      - name: Commit media
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898+github-actions[bot]@users.noreply.github.com"
+          git add src/assets/capture
+          git diff --cached --quiet || git commit -m "Update captured project media [skip ci]"
+          git push
