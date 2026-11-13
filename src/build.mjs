@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { person, stack, experience, education, projects, services, process as steps, principles, faq, skillGroups } from './content.mjs';
 import { icons } from './icons.mjs';
-import { flowArt, flowCaption } from './flowart.mjs';
+import { flowArt, flowCaption, flowChips } from './flowart.mjs';
 
 const SRC = path.dirname(new URL(import.meta.url).pathname);
 const DIST = path.resolve(SRC, '..', 'dist');
@@ -87,6 +87,8 @@ const SVC = [
   { i: 1, layer: 'AI', panel: 'llm' },
   { i: 2, layer: 'UI', panel: 'ui' },
 ];
+// one station: an extruded glass plate (8 slices for thickness), three art layers, floating chips
+const stCard = (layer, ports = false) => `<div class="st-card"><div class="st-plate">${[8, 7, 6, 5, 4, 3, 2, 1].map((e) => `<i style="--e:${e}"></i>`).join('')}<b></b></div>${flowArt[layer]()}<div class="lyr lyr-chips" style="--z:170">${flowChips[layer].map(([t, c], i) => `<span class="fchip fchip-${i} ${c}">${t}</span>`).join('')}</div>${ports ? '<span class="port port-l" data-port-l></span><span class="port port-r" data-port-r></span>' : ''}</div>`;
 const projMedia = (p, which = 'img') => p.img ? img(which === 'crop' ? p.crop : p.img, p.alt, '', '(max-width: 760px) 92vw, 60vw') : panels[p.art]();
 
 // ---------- shared chrome ----------
@@ -165,7 +167,7 @@ const footer = () => `
         <span class="ftr-line"><span>something <em>dependable</em></span></span>
       </a>
       <div class="ftr-cta">
-        <a class="ftr-circle" href="mailto:${person.email}" data-magnetic aria-label="Email Raj"><span>Email me</span>${arrow}</a>
+        <a class="ftr-circle" href="mailto:${person.email}" data-magnetic aria-label="Email Raj"><svg class="ftr-ring" viewBox="0 0 200 200" aria-hidden="true"><defs><path id="ftr-ring-p" d="M100 100m-86 0a86 86 0 1 1 172 0a86 86 0 1 1-172 0"/></defs><text><textPath href="#ftr-ring-p">Let’s build something · Email me · Open to opportunities · </textPath></text></svg><span>Email me</span>${arrow}</a>
         <div class="ftr-mail"><small>Write to me</small><a href="mailto:${person.email}">${person.email}</a><button type="button" class="copy" data-copy="${person.email}">Copy email</button></div>
       </div>
     </div>
@@ -175,7 +177,7 @@ const footer = () => `
       <div><small>Status</small><p><span class="pulse"></span>${person.status}</p><p class="dim">Junior Developer at Apex36</p></div>
       <button class="ftr-totop" type="button" data-totop>Back to top <span>↑</span></button>
     </div>
-    <p class="ftr-word" aria-hidden="true">${'RAJ CHAUHAN'.split('').map((c) => `<span>${c === ' ' ? '&nbsp;' : c}</span>`).join('')}</p>
+    <p class="ftr-word" aria-hidden="true" data-ftr-word>${'RAJ CHAUHAN'.split('').map((c) => `<span><i>${c === ' ' ? '&nbsp;' : c}</i></span>`).join('')}</p>
     <div class="ftr-bot"><span>© ${YEAR} ${person.name}</span><span>Built with care, code, and curiosity</span><button type="button" class="motion-t" data-motion-toggle aria-pressed="true">Motion: on</button></div>
   </div>
 </footer>`;
@@ -239,6 +241,7 @@ const stackSection = () => `
 const reel = () => `
 <section class="reel" data-reel aria-label="Build log">
   <div class="reel-box" data-reel-box>
+    ${[['✓ lint · types · tests', 'ok', -140], ['λ functions live', 'o', 110], ['status: healthy', 'ok', -90], ['/dashboard ✓', '', 160]].map(([t, c, v], i) => `<span class="rchip rchip-${i} ${c}" data-rchip="${v}" aria-hidden="true">${t}</span>`).join('')}
     <div class="reel-term" data-term aria-hidden="true">
       <div class="pnl-bar"><b></b><b></b><b></b><span>raj@build — zsh</span></div>
       <pre class="rt-out"></pre>
@@ -272,7 +275,7 @@ const timeline = () => `
         { when: education[0].when, what: education[0].what, org: education[0].org },
         { when: education[1].when, what: education[1].what, org: education[1].org },
       ].map((e) => `
-      <article class="tl-it${e.now ? ' now' : ''}" data-fade>
+      <article class="tl-it${e.now ? ' now' : ''}" data-tl-it>
         <span class="tl-dot" aria-hidden="true"></span>
         <p class="tl-when">${e.when}${e.now ? ' <span class="now-pill"><span class="pulse"></span>Now</span>' : ''}</p>
         <div class="tl-body"><h3>${e.what}</h3><p class="tl-org">${e.org}</p>${e.text ? `<p class="tl-text">${e.text}</p>` : ''}${e.tags ? `<div class="tags">${e.tags.map(tag).join('')}</div>` : ''}</div>
@@ -284,6 +287,12 @@ const timeline = () => `
 const pageHero = (title, sub, kicker) => `
 <section class="ph" data-ph>
   <div class="ph-bg" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div></div>
+  <div class="ph-orb" aria-hidden="true" data-orb><div class="orb-tilt" data-orb-tilt><div class="orb-in">
+    ${[0, 1, 2, 3, 4, 5].map((i) => `<i class="orb-m" style="--r:${i * 30}"></i>`).join('')}
+    ${[-0.66, -0.33, 0, 0.33, 0.66].map((y) => `<i class="orb-p" style="--y:${y};--s:${Math.sqrt(1 - y * y).toFixed(3)}"></i>`).join('')}
+    ${[[0, 0], [60, 30], [130, -40], [200, 15], [270, -20], [320, 45]].map(([a, b]) => `<b class="orb-n" style="--a:${a};--b:${b}"></b>`).join('')}
+    <span class="orb-core"></span>
+  </div></div></div>
   <div class="wrap">
     <p class="ph-k" data-fade>${kicker}</p>
     <h1 class="ph-h" data-chars aria-label="${esc(title)}">${title.split(' ').map((w) => `<span class="ph-w">${w.split('').map((c) => `<span class="ch"><span>${c}</span></span>`).join('')}</span>`).join(' ')}</h1>
@@ -371,35 +380,42 @@ function home() {
         <div>${label('What I do')}${H('FROM API {TO INTERFACE}', 'h2', 'svc-h')}</div>
         <p class="svc-sub" data-fade>Five layers of one product. I build each of them, and usually all of them together.</p>
       </div>
-      <div class="svc-body">
-        <ol class="svc-list" data-svc-list>
-          ${SVC.map((o, k) => { const s = services[o.i]; return `
-          <li class="svc-item${k === 0 ? ' is-on' : ''}" data-svc-item style="--k:${k}">
-            <button class="svc-row" type="button" data-svc-go="${k}" aria-expanded="${k === 0}">
-              <span class="svc-n">0${k + 1}</span>
-              <span class="svc-t">${s.title}</span>
-              <span class="svc-layer">${o.layer}</span>
-            </button>
-            <div class="svc-more"><div class="svc-more-in">
-              <p class="svc-st">${s.statement}</p>
-              <div class="tags">${s.tags.map(tag).join('')}</div>
-              <div class="svc-art" aria-hidden="true"><div class="st-card">${flowArt[o.layer]()}</div></div>
-            </div></div>
-          </li>`; }).join('')}
-        </ol>
-        <div class="svc-vis" aria-hidden="true" data-svc-vis>
-          <div class="svc-vis-grid"></div>
-          <p class="svc-read"><span class="svc-read-dot"></span>Step <b data-svc-num>01</b> / 05 · <b data-svc-name>${SVC[0].layer}</b></p>
-          <div class="flow" data-flow><div class="flow-track" data-flow-track>
-            <svg class="flow-pipe" data-flow-pipe><path class="fp-base" data-fp-base/><path class="fp-flow" data-fp-flow/>${SVC.slice(1).map(() => '<path class="fp-seg" data-fp-seg pathLength="1"/>').join('')}</svg>
-            ${[0, 1, 2, 3, 4, 5].map((i) => `<i class="flow-pk" data-fpk style="--i:${i}"></i>`).join('')}
-            ${SVC.map((o, k) => `<div class="st${k === 0 ? ' is-on' : ''}" data-st style="--k:${k}">
-              <div class="st-tilt" data-st-tilt><div class="st-card">${flowArt[o.layer]()}<span class="port port-l" data-port-l></span><span class="port port-r" data-port-r></span></div><span class="st-floor"></span></div>
-              <p class="st-cap"><b>0${k + 1}</b>${o.layer}<span>${flowCaption[o.layer]}</span></p>
-            </div>`).join('')}
+      <ol class="svc-list" data-svc-list>
+        ${SVC.map((o, k) => { const s = services[o.i]; return `
+        <li class="svc-item${k === 0 ? ' is-on' : ''}" data-svc-item style="--k:${k}">
+          <button class="svc-row" type="button" data-svc-go="${k}" aria-expanded="${k === 0}">
+            <span class="svc-n">0${k + 1}</span>
+            <span class="svc-t">${s.title}</span>
+            <span class="svc-layer">${o.layer}</span>
+          </button>
+          <div class="svc-more"><div class="svc-more-in">
+            <p class="svc-st">${s.statement}</p>
+            <div class="tags">${s.tags.map(tag).join('')}</div>
+            <div class="svc-art" aria-hidden="true">${stCard(o.layer)}</div>
           </div></div>
-          <p class="svc-hint"><span></span>Scroll to follow the flow</p>
-        </div>
+        </li>`; }).join('')}
+      </ol>
+    </div>
+    <div class="svc-stage" data-svc-vis aria-hidden="true">
+      <div class="svc-bg"><div class="svc-floor" data-svc-floor></div><div class="svc-horizon"></div>
+        ${[0, 1, 2].map((d) => `<div class="svc-dust" data-dust="${d}">${Array.from({ length: 14 }, (_, i) => `<i style="--x:${(i * 37 + d * 13) % 100};--y:${(i * 53 + d * 29) % 100};--s:${1 + ((i + d) % 3)};--t:${6 + ((i * 7) % 9)}"></i>`).join('')}</div>`).join('')}
+      </div>
+      <div class="svc-top">
+        <div class="svc-top-l"><p class="svc-kick"><span class="label-dot"></span>What I do</p><p class="svc-title">From API <span>to interface</span></p></div>
+        <div class="svc-ticks">${SVC.map((o, k) => `<button type="button" tabindex="-1" class="svc-tick${k === 0 ? ' is-on' : ''}" data-svc-go="${k}" data-tick><span>0${k + 1}</span>${o.layer}</button>`).join('')}<span class="svc-ticks-bar"><i data-ticks-fill></i></span></div>
+      </div>
+      <div class="flow" data-flow><div class="flow-track" data-flow-track>
+        <svg class="flow-pipe" data-flow-pipe><path class="fp-base" data-fp-base/><path class="fp-flow" data-fp-flow/>${SVC.slice(1).map(() => '<path class="fp-seg" data-fp-seg pathLength="1"/>').join('')}</svg>
+        ${[0, 1, 2, 3, 4, 5].map((i) => `<i class="flow-pk" data-fpk style="--i:${i}"></i>`).join('')}
+        ${SVC.map((o, k) => `<div class="st${k === 0 ? ' is-on' : ''}" data-st style="--k:${k}">
+          <div class="st-tilt" data-st-tilt><div class="st-idle"><span class="st-glow"></span>${stCard(o.layer, true)}</div><span class="st-floor"></span></div>
+        </div>`).join('')}
+      </div></div>
+      <div class="svc-info">
+        ${SVC.map((o, k) => { const s = services[o.i]; return `<div class="svc-inf${k === 0 ? ' is-on' : ''}" data-svc-inf>
+          <div class="si-l"><p class="si-k"><span class="m"><span>0${k + 1} · ${o.layer} · ${flowCaption[o.layer]}</span></span></p><p class="si-t"><span class="m"><span>${s.title}</span></span></p></div>
+          <div class="si-r"><p class="si-st"><span class="m"><span>${s.statement}</span></span></p><div class="si-tags">${s.tags.map((t, i) => `<span class="tag" style="--i:${i}">${esc(t)}</span>`).join('')}</div></div>
+        </div>`; }).join('')}
       </div>
     </div>
   </div>
@@ -412,7 +428,7 @@ ${stackSection()}
     <div class="sec-hd">${label('How I work')}${H('A PROCESS {THAT SHIPS}')}</div>
     <div class="proc-row">
       <span class="proc-line" aria-hidden="true"><i data-proc-fill></i></span>
-      ${steps.map((s, i) => `<article class="pstep" data-pstep><span class="pstep-dot">0${i + 1}</span><h3>${s.t}</h3><p>${s.d}</p></article>`).join('')}
+      ${steps.map((s, i) => `<article class="pstep" data-pstep><span class="pstep-big" aria-hidden="true">0${i + 1}</span><span class="pstep-dot">0${i + 1}</span><h3>${s.t}</h3><p>${s.d}</p></article>`).join('')}
     </div>
   </div>
 </section>
@@ -422,7 +438,12 @@ ${timeline()}
 
 <section class="quote sec">
   <div class="wrap quote-in">
-    <figure class="quote-img" data-reveal-media><span data-par="5">${img('raj-hoodie-800.webp', 'Illustrated portrait of Raj Chauhan in a cream hoodie', '', '(max-width: 760px) 80vw, 34vw')}</span></figure>
+    <figure class="quote-img" data-q3d-wrap><div class="q-3d" data-q3d>
+      <span class="q-card"><span class="q-grid"></span><span class="q-ring"></span></span>
+      <span class="q-person" data-depth="18">${img('raj-hoodie-800.webp', 'Illustrated portrait of Raj Chauhan in a cream hoodie', '', '(max-width: 760px) 80vw, 34vw')}</span>
+      <span class="q-chip q-chip-1" data-depth="34">${ast()} Simple on the surface</span>
+      <span class="q-chip q-chip-2" data-depth="40"><span class="pulse"></span>Dependable underneath</span>
+    </div></figure>
     <blockquote>
       <p class="quote-t" data-fill>“Good software should feel simple on the surface and stay dependable underneath.”</p>
       <footer data-fade><strong>${person.name}</strong> · A principle I build by</footer>

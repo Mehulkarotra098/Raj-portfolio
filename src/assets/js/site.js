@@ -168,7 +168,7 @@
         });
     }
     const ph = $('[data-ph]');
-    if (ph) G.to($$('.ph-h .ch > span', ph), { y: 0, duration: 1.3, stagger: 0.04, delay: 0.05 });
+    if (ph) G.fromTo($$('.ph-h .ch > span', ph), { y: '110%', rotateX: -90, transformPerspective: 800, transformOrigin: '50% 100%' }, { y: 0, rotateX: 0, duration: 1.5, stagger: 0.045, ease: 'expo.out', delay: 0.05 });
   }
 
   // ---------- header: solid after hero, hides on scroll down ----------
@@ -304,12 +304,13 @@
   // headline word reveals
   $$('[data-words]').forEach((h) => {
     if (h.closest('[data-ph]') || h.closest('.nf')) { G.to($$('.mw', h), { y: 0, duration: 1.3, stagger: 0.06, delay: 0.5 }); return; }
-    G.to($$('.mw', h), { y: 0, duration: 1.25, stagger: 0.06, scrollTrigger: { trigger: h, start: 'top 88%', once: true } });
+    G.fromTo($$('.mw', h), { y: '110%', rotateX: -85, transformPerspective: 700, transformOrigin: '50% 100%' }, { y: 0, rotateX: 0, duration: 1.4, stagger: 0.07, ease: 'expo.out', scrollTrigger: { trigger: h, start: 'top 88%', once: true } });
   });
 
   // fades
-  ST.batch('[data-fade]', { start: 'top 90%', once: true, onEnter: (els) => G.to(els, { opacity: 1, y: 0, duration: 1.1, stagger: 0.08, overwrite: true }) });
-  $$('[data-stagger]').forEach((g) => G.to(g.children, { opacity: 1, y: 0, duration: 1, stagger: 0.06, scrollTrigger: { trigger: g, start: 'top 88%', once: true } }));
+  // everything arrives in 3D: text tips up from below, grouped cards fly in from depth
+  ST.batch('[data-fade]', { start: 'top 90%', once: true, onEnter: (els) => G.fromTo(els, { opacity: 0, y: 40, rotateX: -32, transformPerspective: 900, transformOrigin: '50% 0%' }, { opacity: 1, y: 0, rotateX: 0, duration: 1.2, stagger: 0.08, ease: 'expo.out', overwrite: true, clearProps: 'transform' }) });
+  $$('[data-stagger]').forEach((g) => G.fromTo(g.children, { opacity: 0, y: 90, z: -320, rotateX: -62, rotateY: (i) => (i % 2 ? 12 : -12), transformPerspective: 1100, transformOrigin: '50% 100%' }, { opacity: 1, y: 0, z: 0, rotateX: 0, rotateY: 0, duration: 1.4, stagger: 0.07, ease: 'expo.out', clearProps: 'transform', scrollTrigger: { trigger: g, start: 'top 88%', once: true } }));
 
   // media unclip
   $$('[data-reveal-media]').forEach((m) => G.to(m, { clipPath: 'inset(0% 0% 0% 0% round 26px)', duration: 1.6, ease: 'expo.inOut', scrollTrigger: { trigger: m, start: 'top 85%', once: true } }));
@@ -349,7 +350,10 @@
   ST.create({ onUpdate: (s) => { vel.v = Math.min(Math.abs(s.getVelocity()) / 300, 18); vel.dir = s.direction; } });
   const rails = [...$$('[data-band]').map((r) => [$('.band-track', r), +r.dataset.band, 0.6]), ...$$('[data-rail]').map((r) => [$('.sk-track', r), +r.dataset.rail, 0.45])];
   rails.forEach((r) => { r.x = 0; });
+  let skew = 0;
   G.ticker.add(() => {
+    skew += (Math.max(-3.2, Math.min(3.2, vel.v * vel.dir * 0.35)) - skew) * 0.12;
+    html.style.setProperty('--skew', skew.toFixed(3));
     vel.v *= 0.92;
     rails.forEach((r) => {
       const [track, d, base] = r;
@@ -367,15 +371,20 @@
     el.addEventListener('pointerleave', () => G.to(el, { x: 0, y: 0, duration: 1.2, ease: 'elastic.out(1, .4)' }));
   });
 
-  // tilt + spotlight on cards
-  if (fine) $$('[data-tilt]').forEach((el) => {
+  // tilt + spotlight + glare on cards, with inner [data-depth] layers that pop forward in 3D
+  if (fine) [...new Set($$('[data-tilt], .stat, .ct-card, .tl-body, .cs-media, .wk-media, .prin-c, .quote-img'))].forEach((el) => {
+    const big = el.matches('.cs-media, .wk-media, .ab-photo'), amt = big ? 7 : 13;
+    el.classList.add('has-tilt');
+    if (!el.querySelector(':scope > .glare')) el.insertAdjacentHTML('beforeend', '<span class="glare" aria-hidden="true"></span>');
+    const deep = $$('[data-depth]', el);
     el.addEventListener('pointermove', (e) => {
       const r = el.getBoundingClientRect(), px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
       el.style.setProperty('--mx', px * 100 + '%'); el.style.setProperty('--my', py * 100 + '%');
-      G.to(el, { rotateY: (px - 0.5) * 10, rotateX: (0.5 - py) * 10, transformPerspective: 800, duration: 0.6 });
+      G.to(el, { rotateY: (px - 0.5) * amt, rotateX: (0.5 - py) * amt, z: big ? 0 : 24, transformPerspective: 900, duration: 0.6, overwrite: 'auto' });
+      deep.forEach((d) => G.to(d, { x: (px - 0.5) * +d.dataset.depth, y: (py - 0.5) * +d.dataset.depth, duration: 0.8, overwrite: 'auto' }));
     });
     el.addEventListener('pointerenter', (e) => { const r = el.getBoundingClientRect(); el.style.setProperty('--mx', ((e.clientX - r.left) / r.width) * 100 + '%'); el.style.setProperty('--my', ((e.clientY - r.top) / r.height) * 100 + '%'); });
-    el.addEventListener('pointerleave', () => G.to(el, { rotateY: 0, rotateX: 0, duration: 1, ease: 'elastic.out(1, .5)' }));
+    el.addEventListener('pointerleave', () => { G.to(el, { rotateY: 0, rotateX: 0, z: 0, duration: 1.1, ease: 'elastic.out(1, .5)', overwrite: 'auto' }); deep.forEach((d) => G.to(d, { x: 0, y: 0, duration: 1.1, ease: 'elastic.out(1, .5)' })); });
   });
 
   // custom cursor
@@ -445,8 +454,22 @@
       });
       cards.forEach((c) => {
         G.fromTo($('[data-wk-par]', c), { scale: 1.12 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: c, containerAnimation: tween, start: 'left right', end: 'left 30%', scrub: true } });
-        G.fromTo(c, { rotate: 2.5, y: 40 }, { rotate: 0, y: 0, ease: 'none', scrollTrigger: { trigger: c, containerAnimation: tween, start: 'left right', end: 'left 40%', scrub: true } });
       });
+      // 3D gallery: cards swing in from the right edge, face you in the centre, and recede on the left
+      const all = [...cards, $('.wk-more', work)].filter(Boolean);
+      let on = false;
+      const io = new IntersectionObserver(([e]) => { on = e.isIntersecting; }, { rootMargin: '10% 0px' }); io.observe(pin);
+      const swing = () => {
+        if (!on) return;
+        const W = innerWidth;
+        all.forEach((c) => {
+          const r = c.getBoundingClientRect(), off = Math.max(-1.6, Math.min(1.6, (r.left + r.width / 2 - W * 0.42) / (W * 0.55))), a = Math.abs(off);
+          c.style.transform = `perspective(1500px) translate3d(0, ${(a * 26).toFixed(1)}px, ${(-a * 170).toFixed(1)}px) rotateY(${(-off * 24).toFixed(2)}deg) rotateZ(${(off * 1.5).toFixed(2)}deg)`;
+          c.style.opacity = (1 - Math.max(0, a - 0.9) * 0.6).toFixed(3);
+        });
+      };
+      G.ticker.add(swing);
+      return () => { G.ticker.remove(swing); io.disconnect(); all.forEach((c) => { c.style.transform = ''; c.style.opacity = ''; }); };
     });
     mm.add('(max-width: 860px)', () => {
       cards.forEach((c) => {
@@ -457,27 +480,29 @@
   }
 
   // CAPABILITIES: sticky stack, earlier cards recede as the next arrives
-  // WHAT I DO: pinned on desktop; the camera pans along a flow of five stations (API → Cloud → Data → AI → UI),
-  // a glowing pipe fills between them and data packets run along it
+  // WHAT I DO: a full-screen stage. Scrolling flies the camera along five stations (API → Cloud → Data → AI → UI):
+  // stations turn and recede like a coverflow, the floor grid and dust slide with parallax, a glowing pipe fills
+  // between the cards' ports with packets running along it, and the copy for each station swaps in at the bottom.
   const svc = $('[data-svc]');
   if (svc) {
-    const items = $$('[data-svc-item]', svc), sts = $$('[data-st]', svc);
-    const num = $('[data-svc-num]', svc), name = $('[data-svc-name]', svc), list = $('[data-svc-list]', svc);
+    const items = $$('[data-svc-item]', svc), sts = $$('[data-st]', svc), infs = $$('[data-svc-inf]', svc), ticks = $$('[data-tick]', svc);
     const flow = $('[data-flow]', svc), track = $('[data-flow-track]', svc), pipe = $('[data-flow-pipe]', svc);
-    const base = $('[data-fp-base]', svc), segs = $$('[data-fp-seg]', svc), pks = $$('[data-fpk]', svc);
+    const base = $('[data-fp-base]', svc), segs = $$('[data-fp-seg]', svc), pks = $$('[data-fpk]', svc), flowLine = $('[data-fp-flow]', svc);
+    const floor = $('[data-svc-floor]', svc), dust = $$('[data-dust]', svc), tfill = $('[data-ticks-fill]', svc);
     const N = items.length;
     let cur = -1, st = null;
     const set = (k) => {
       if (k === cur) return; cur = k;
       items.forEach((el, i) => { el.classList.toggle('is-on', i === k); el.classList.toggle('is-done', i < k); $('.svc-row', el).setAttribute('aria-expanded', i === k); });
-      sts.forEach((el, i) => { el.classList.toggle('is-on', i === k); el.style.setProperty('--side', i < k ? 1 : i > k ? -1 : 0); });
-      num.textContent = '0' + (k + 1); name.textContent = $('.svc-layer', items[k]).textContent;
-      list.style.setProperty('--p', (k + 1) / N);
+      sts.forEach((el, i) => el.classList.toggle('is-on', i === k));
+      infs.forEach((el, i) => { el.classList.toggle('is-on', i === k); el.classList.toggle('is-done', i < k); });
+      ticks.forEach((el, i) => { el.classList.toggle('is-on', i === k); el.classList.toggle('is-done', i < k); });
+      tfill.style.setProperty('--p', (k + 1) / N);
     };
     // the pipe: an S-curve from each card's right port to the next card's left port. Ports live inside the
     // 3D cards, so the pipe is re-measured every frame while the scene is on screen and always meets them.
     const portsL = sts.map((el) => $('[data-port-l]', el)), portsR = sts.map((el) => $('[data-port-r]', el));
-    const flowLine = $('[data-fp-flow]', svc);
+    const f1 = (n) => n.toFixed(1);
     const drawPipe = () => {
       const tr = track.getBoundingClientRect();
       const c = (el) => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2 - tr.left, r.top + r.height / 2 - tr.top]; };
@@ -485,63 +510,68 @@
       const W = track.offsetWidth, H = track.offsetHeight;
       pipe.setAttribute('viewBox', `0 0 ${W} ${H}`);
       const segD = R.slice(0, -1).map(([ox, oy], k) => {
-        const [ix, iy] = L[k + 1], d = Math.max(40, (ix - ox) * 0.5), dy = (k % 2 ? -1 : 1) * H * 0.2;
-        return `C${(ox + d).toFixed(1)} ${(oy + dy).toFixed(1)} ${(ix - d).toFixed(1)} ${(iy - dy).toFixed(1)} ${ix.toFixed(1)} ${iy.toFixed(1)}`;
+        const [ix, iy] = L[k + 1], d = Math.max(50, (ix - ox) * 0.5), dy = (k % 2 ? -1 : 1) * H * 0.22;
+        return `C${f1(ox + d)} ${f1(oy + dy)} ${f1(ix - d)} ${f1(iy - dy)} ${f1(ix)} ${f1(iy)}`;
       });
-      segD.forEach((d, k) => segs[k].setAttribute('d', `M${R[k][0].toFixed(1)} ${R[k][1].toFixed(1)}${d}`));
-      let full = `M${(L[0][0] - W * 0.25).toFixed(1)} ${L[0][1].toFixed(1)}L${L[0][0].toFixed(1)} ${L[0][1].toFixed(1)}M${R[0][0].toFixed(1)} ${R[0][1].toFixed(1)}`;
-      segD.forEach((d, k) => { full += (k ? `M${R[k][0].toFixed(1)} ${R[k][1].toFixed(1)}` : '') + d; });
+      segD.forEach((d, k) => segs[k].setAttribute('d', `M${f1(R[k][0])} ${f1(R[k][1])}${d}`));
+      let full = `M${f1(L[0][0] - W * 0.3)} ${f1(L[0][1])}L${f1(L[0][0])} ${f1(L[0][1])}`;
+      segD.forEach((d, k) => { full += `M${f1(R[k][0])} ${f1(R[k][1])}` + d; });
       const last = R[N - 1];
-      full += `M${last[0].toFixed(1)} ${last[1].toFixed(1)}L${(last[0] + W * 0.25).toFixed(1)} ${last[1].toFixed(1)}`;
+      full += `M${f1(last[0])} ${f1(last[1])}L${f1(last[0] + W * 0.3)} ${f1(last[1])}`;
       base.setAttribute('d', full); flowLine.setAttribute('d', full);
-      // packets ride the joined path only (no jumps across a card)
-      const joined = `M${R[0][0].toFixed(1)} ${R[0][1].toFixed(1)}` + segD.map((d, k) => d + (k < segD.length - 1 ? `L${R[k + 1][0].toFixed(1)} ${R[k + 1][1].toFixed(1)}` : '')).join('');
+      const joined = `M${f1(R[0][0])} ${f1(R[0][1])}` + segD.map((d, k) => d + (k < segD.length - 1 ? `L${f1(R[k + 1][0])} ${f1(R[k + 1][1])}` : '')).join('');
       pks.forEach((pk) => { pk.style.offsetPath = `path("${joined}")`; });
       flow.classList.add('has-path');
     };
-    // coverflow: every station's offset from the camera drives its turn, depth and fade
-    const place = (t) => sts.forEach((el, k) => {
-      const off = k - t, a = Math.abs(off);
-      el.style.setProperty('--off', off.toFixed(3)); el.style.setProperty('--aoff', a.toFixed(3));
-      el.style.setProperty('--depth', Math.max(0.15, 1.5 - a * 1.6).toFixed(3));
-      el.classList.toggle('is-done', k < t - 0.5);
-    });
+    // coverflow: every station's offset from the camera drives its turn, depth and fade; the world slides with parallax
+    const place = (t) => {
+      sts.forEach((el, k) => {
+        const off = k - t, a = Math.abs(off);
+        el.style.setProperty('--off', off.toFixed(3)); el.style.setProperty('--aoff', a.toFixed(3));
+        el.style.setProperty('--depth', Math.max(0.15, 1.5 - a * 1.6).toFixed(3));
+        el.classList.toggle('is-done', k < t - 0.5);
+      });
+      floor.style.setProperty('--gx', (-t * 420).toFixed(1));
+      dust.forEach((d, i) => { d.style.transform = `translate3d(${(-t * [60, 140, 300][i]).toFixed(1)}px,0,0)`; });
+    };
     mm.add('(min-width: 1001px)', () => {
       svc.classList.add('is-live');
-      set(0);
-      const sw = () => flow.clientWidth * 0.62;
-      place(0); requestAnimationFrame(drawPipe);
+      set(0); place(0);
+      const sw = () => flow.clientWidth * 0.52;
+      requestAnimationFrame(drawPipe);
       const tl = G.timeline({ defaults: { ease: 'none' } });
       for (let k = 0; k < N - 1; k++) {
         tl.to(track, { x: () => -(k + 1) * sw(), duration: 1, ease: 'power2.inOut' }, k)
           .fromTo(segs[k], { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.75, ease: 'power1.inOut' }, k + 0.1);
       }
-      tl.to({}, { duration: 0.25 });
-      st = ST.create({ trigger: svc, start: 'top top', end: () => '+=' + innerHeight * (N - 0.5) * 0.85, pin: $('[data-svc-pin]', svc), animation: tl, scrub: 0.9, invalidateOnRefresh: true,
-        onRefresh: drawPipe });
+      tl.to({}, { duration: 0.3 });
+      st = ST.create({ trigger: svc, start: 'top top', end: () => '+=' + innerHeight * (N - 0.5) * 0.9, pin: $('[data-svc-pin]', svc), animation: tl, scrub: 0.9, invalidateOnRefresh: true,
+        onRefresh: drawPipe, onToggle: (self) => html.classList.toggle('svc-on', self.isActive) });
       tl.eventCallback('onUpdate', () => { const t = Math.min(N - 1, tl.time()); place(t); set(Math.max(0, Math.min(N - 1, Math.round(t - 0.2)))); });
       // keep the pipe glued to the moving 3D ports while the scene is on screen
       const tick = () => { if (st && st.isActive) drawPipe(); };
       G.ticker.add(tick);
+      // entering the stage: the first card flies in from deep space
+      G.fromTo(sts[0].querySelector('[data-st-tilt]'), { opacity: 0 }, { opacity: 1, duration: 1, scrollTrigger: { trigger: svc, start: 'top 70%', once: true } });
       let off = () => {};
       if (fine) {
         const stage = $('[data-svc-vis]', svc);
-        const move = (e) => { const r = stage.getBoundingClientRect(); const dx = (e.clientX - r.left) / r.width - 0.5, dy = (e.clientY - r.top) / r.height - 0.5; G.to(sts, { '--ty': dx * 18, '--tx': -dy * 14, duration: 1, ease: 'power3.out', overwrite: 'auto' }); };
+        const move = (e) => { const dx = e.clientX / innerWidth - 0.5, dy = e.clientY / innerHeight - 0.5; G.to(sts, { '--ty': dx * 22, '--tx': -dy * 16, duration: 1, ease: 'power3.out', overwrite: 'auto' }); };
         const leave = () => G.to(sts, { '--ty': 0, '--tx': 0, duration: 1.2, ease: 'power3.out', overwrite: 'auto' });
         stage.addEventListener('pointermove', move); stage.addEventListener('pointerleave', leave);
         off = () => { stage.removeEventListener('pointermove', move); stage.removeEventListener('pointerleave', leave); };
       }
-      return () => { G.ticker.remove(tick); off(); svc.classList.remove('is-live'); st = null; cur = -1; G.set([track, ...segs, ...sts], { clearProps: 'all' }); };
+      return () => { G.ticker.remove(tick); off(); html.classList.remove('svc-on'); svc.classList.remove('is-live'); st = null; cur = -1; G.set([track, ...segs, ...sts], { clearProps: 'all' }); };
     });
     // card layout: run each graphic only while it's on screen
     if ('IntersectionObserver' in window) {
       const io = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle('in-view', e.isIntersecting)), { rootMargin: '0px 0px -10% 0px' });
       items.forEach((el) => io.observe(el));
     } else items.forEach((el) => el.classList.add('in-view'));
-    // clicking a layer jumps to it
+    // clicking a step (tab or list) jumps to it
     $$('[data-svc-go]', svc).forEach((b) => b.addEventListener('click', () => {
       const k = +b.dataset.svcGo;
-      if (st) scrollTo(st.start + (st.end - st.start) * Math.min(1, (k + 0.05) / (N - 0.75)), { offset: 0 });
+      if (st) scrollTo(st.start + (st.end - st.start) * Math.min(1, (k + 0.05) / (N - 0.7)), { offset: 0 });
     }));
   }
 
@@ -554,16 +584,42 @@
       G.set(fill, { scaleX: ctx.conditions.d ? 0 : 1, scaleY: ctx.conditions.d ? 1 : 0 });
       G.to(fill, { [prop]: 1, ease: 'none', scrollTrigger: { trigger: $('.proc-row', proc), start: 'top 75%', end: 'bottom 55%', scrub: true, onUpdate: (s) => stepsEl.forEach((st, i) => st.classList.toggle('on', s.progress >= i / stepsEl.length + 0.02)) } });
     });
-    G.from(stepsEl, { y: 50, opacity: 0, stagger: 0.12, duration: 1.1, scrollTrigger: { trigger: proc, start: 'top 75%', once: true } });
+    // the whole row lies flat on the floor and stands up as it scrolls in
+    mm.add('(min-width: 861px)', () => { G.fromTo($('.proc-row', proc), { rotateX: 58, y: 120, z: -160, transformOrigin: '50% 100%' }, { rotateX: 0, y: 0, z: 0, ease: 'none', scrollTrigger: { trigger: proc, start: 'top 95%', end: 'top 25%', scrub: true } }); });
   }
 
   // REEL: grows from a card to near full-bleed
   $$('[data-reel-box]').forEach((b) => {
-    G.fromTo(b, { scale: 0.62, borderRadius: 40 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: b, start: 'top bottom', end: 'center 55%', scrub: true } });
+    G.fromTo(b, { scale: 0.62, rotateX: 34, y: 60 }, { scale: 1, rotateX: 0, y: 0, ease: 'none', scrollTrigger: { trigger: b, start: 'top bottom', end: 'center 55%', scrub: true } });
+    $$('[data-rchip]', b).forEach((c) => G.fromTo(c, { y: +c.dataset.rchip }, { y: -c.dataset.rchip * 0.6, ease: 'none', scrollTrigger: { trigger: b, start: 'top bottom', end: 'bottom top', scrub: true } }));
   });
 
   // TIMELINE: progress line
-  $$('[data-tl]').forEach((t) => G.to($('[data-tl-fill]', t), { scaleY: 1, ease: 'none', scrollTrigger: { trigger: $('.tl-list', t), start: 'top 70%', end: 'bottom 60%', scrub: true } }));
+  $$('[data-tl]').forEach((t) => {
+    const its = $$('[data-tl-it]', t), list = $('.tl-list', t);
+    G.to($('[data-tl-fill]', t), { scaleY: 1, ease: 'none', scrollTrigger: { trigger: list, start: 'top 70%', end: 'bottom 60%', scrub: true,
+      onUpdate: (s) => { const lh = list.offsetHeight; its.forEach((it) => it.classList.toggle('lit', s.progress * lh >= it.offsetTop + 30)); } } });
+    // each entry swings in from the line like a door
+    its.forEach((it) => G.fromTo(it, { opacity: 0, rotateY: -38, x: -40, transformPerspective: 1200, transformOrigin: '0% 50%' }, { opacity: 1, rotateY: 0, x: 0, duration: 1.4, ease: 'expo.out', clearProps: 'transform', scrollTrigger: { trigger: it, start: 'top 85%', once: true } }));
+  });
+
+  // QUOTE: the portrait card swings round as it passes; the person pops out of the card
+  $$('[data-q3d]').forEach((q) => {
+    G.fromTo(q, { rotateY: -26, rotateX: 8 }, { rotateY: 14, rotateX: -4, ease: 'none', scrollTrigger: { trigger: q, start: 'top bottom', end: 'bottom top', scrub: true } });
+    G.fromTo($('.q-person', q), { yPercent: 14, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 1.4, ease: 'expo.out', scrollTrigger: { trigger: q, start: 'top 80%', once: true } });
+    G.from($$('.q-chip', q), { scale: 0, opacity: 0, duration: 1, stagger: 0.15, ease: 'back.out(2)', scrollTrigger: { trigger: q, start: 'top 65%', once: true } });
+  });
+
+  // INNER PAGE HERO: the wireframe orb follows the mouse and drifts away on scroll
+  $$('[data-orb]').forEach((o) => {
+    const t = $('[data-orb-tilt]', o);
+    if (fine) addEventListener('pointermove', (e) => G.to(t, { '--oy': (e.clientX / innerWidth - 0.5) * 40, '--ox': (e.clientY / innerHeight - 0.5) * -30, duration: 1.4, ease: 'power3.out', overwrite: 'auto' }), { passive: true });
+    G.fromTo(o, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 2, ease: 'expo.out', delay: 0.4 });
+    G.to(o, { yPercent: 30, scale: 0.8, ease: 'none', scrollTrigger: { trigger: o.closest('[data-ph]'), start: 'top top', end: 'bottom top', scrub: true } });
+  });
+
+  // CASE STUDIES: media zooms out of depth as it scrolls
+  $$('.cs-media-in').filter((m) => m.querySelector(':scope > img')).forEach((m) => G.fromTo(m, { scale: 1.18 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: m.parentElement, start: 'top bottom', end: 'center center', scrub: true } }));
 
   // WORK PAGE: image preview that follows the cursor over the index
   const float = $('[data-preview-float]');
@@ -588,6 +644,16 @@
   addEventListener('resize', () => { curtain(); });
   G.to($$('.ftr-line > span'), { y: 0, duration: 1.3, stagger: 0.1, scrollTrigger: { trigger: page, start: 'bottom 75%', once: true } });
   G.fromTo($$('.ftr-word span'), { yPercent: 40, opacity: 0 }, { yPercent: 0, opacity: 1, stagger: 0.03, ease: 'none', scrollTrigger: { trigger: page, start: 'bottom 70%', end: 'bottom bottom', scrub: true } });
+  // the big name waves in 3D toward the cursor
+  const fw = $('[data-ftr-word]');
+  if (fw && fine) {
+    const ls = $$('i', fw);
+    fw.addEventListener('pointermove', (e) => ls.forEach((l) => {
+      const r = l.getBoundingClientRect(), d = (e.clientX - (r.left + r.width / 2)) / innerWidth, f = Math.max(0, 1 - Math.abs(d) * 5);
+      G.to(l, { y: -f * 34, rotateX: f * 26, rotateY: d * -40 * f, z: f * 80, color: f > 0.6 ? '#fff' : '', duration: 0.6, ease: 'power3.out', overwrite: 'auto' });
+    }));
+    fw.addEventListener('pointerleave', () => G.to(ls, { y: 0, rotateX: 0, rotateY: 0, z: 0, color: '', duration: 1.2, ease: 'elastic.out(1, .4)', stagger: 0.02 }));
+  }
   mm.add('(min-width: 861px)', () => { G.fromTo('.ftr-in', { yPercent: -25 }, { yPercent: 0, ease: 'none', scrollTrigger: { trigger: page, start: 'bottom bottom+=' + innerHeight * 0.6, end: 'bottom bottom', scrub: true } }); });
 
   // refresh after fonts/images settle
