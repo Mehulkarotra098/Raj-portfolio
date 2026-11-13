@@ -446,11 +446,26 @@
     mm.add('(min-width: 1001px)', () => {
       svc.classList.add('is-live');
       set(0);
-      st = ST.create({ trigger: svc, start: 'top top', end: () => '+=' + innerHeight * (N - 0.4) * 0.75, pin: $('[data-svc-pin]', svc), scrub: false,
+      const iso = $('[data-svc-iso]', svc), beams = $$('.beam', svc), tilt = $('[data-svc-tilt]', svc), stage = $('.svc-vis', svc);
+      // one scrubbed timeline, one unit per layer: each new layer falls into place, light beams
+      // climb through the built layers, the stack turns, and the last layer opens into an exploded view
+      const tl = G.timeline({ defaults: { ease: 'none' } });
+      tl.fromTo(iso, { '--rz': -50 }, { '--rz': -30, duration: N }, 0);
+      slabs.forEach((sl, k) => { if (k) tl.fromTo(sl, { '--drop': 1 }, { '--drop': 0, duration: 0.55, ease: 'power3.out' }, k - 1 + 0.3); });
+      for (let k = 1; k < N; k++) tl.to(beams, { '--grow': k / (N - 1), duration: 0.45, ease: 'power2.out' }, k - 1 + 0.55);
+      tl.fromTo(iso, { '--spread': 1 }, { '--spread': 1.22, duration: 0.7, ease: 'power2.inOut' }, N - 0.95);
+      G.set(beams, { '--grow': 0 });
+      st = ST.create({ trigger: svc, start: 'top top', end: () => '+=' + innerHeight * (N - 0.4) * 0.8, pin: $('[data-svc-pin]', svc), animation: tl, scrub: 0.8,
         onUpdate: (self) => set(Math.min(N - 1, Math.floor(self.progress * N * 0.999))) });
-      // parallax on the stack while it's pinned
-      const tw = G.fromTo('.svc-iso', { rotateX: 57, rotateZ: -46 }, { rotateX: 57, rotateZ: -34, ease: 'none', scrollTrigger: { trigger: svc, start: 'top top', end: () => '+=' + innerHeight * (N - 0.4) * 0.75, scrub: true } });
-      return () => { svc.classList.remove('is-live'); st = null; tw.scrollTrigger?.kill(); tw.kill(); cur = -1; };
+      // mouse tilt on the stage
+      let off = () => {};
+      if (fine) {
+        const move = (e) => { const r = stage.getBoundingClientRect(); const dx = (e.clientX - r.left) / r.width - 0.5, dy = (e.clientY - r.top) / r.height - 0.5; G.to(tilt, { '--ty': dx * 10, '--tx': -dy * 8, duration: 1.2, ease: 'power3.out', overwrite: 'auto' }); };
+        const leave = () => G.to(tilt, { '--ty': 0, '--tx': 0, duration: 1.4, ease: 'power3.out', overwrite: 'auto' });
+        stage.addEventListener('pointermove', move); stage.addEventListener('pointerleave', leave);
+        off = () => { stage.removeEventListener('pointermove', move); stage.removeEventListener('pointerleave', leave); };
+      }
+      return () => { off(); svc.classList.remove('is-live'); st = null; cur = -1; G.set([iso, ...slabs, ...beams, tilt], { clearProps: 'all' }); };
     });
     // clicking a layer jumps to it
     $$('[data-svc-go]', svc).forEach((b) => b.addEventListener('click', () => {
