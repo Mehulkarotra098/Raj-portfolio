@@ -33,20 +33,68 @@
   const seen = html.classList.contains('seen');
   try { sessionStorage.setItem('rc-seen', '1'); } catch (e) { /* private mode */ }
 
+  // First visit: a request travels API → Data → AI → UI while the counter runs, the headline
+  // re-renders at each stage, and the UI node bursts into the orange page underneath.
+  function runLoader() {
+    const n = $('[data-loader-n]'), fill = $('[data-ld-fill]'), packet = $('[data-ld-packet]');
+    const nodes = $$('[data-ld-node]'), word = $('[data-ld-word]'), burst = $('[data-ld-burst]');
+    const words = ['API', 'Data', 'AI', 'Interface'];
+    const GLYPHS = '01{}[]<>/=_$#*+';
+    let stage = 0, scr = null;
+    const fit = () => { // keep the longest word inside its column
+      word.style.fontSize = '';
+      const max = word.closest('.ld-head').clientWidth; const w = word.scrollWidth;
+      if (w > max) word.style.fontSize = (parseFloat(getComputedStyle(word).fontSize) * max / w * 0.98) + 'px';
+    };
+    const render = (target) => { // scramble from the current word to the next
+      scr?.kill();
+      const o = { p: 0 }, from = word.textContent;
+      const len = Math.max(from.length, target.length);
+      scr = G.to(o, { p: 1, duration: 0.42, ease: 'power2.out', onUpdate: () => {
+        const done = Math.floor(o.p * target.length);
+        let out = target.slice(0, done);
+        for (let i = done; i < Math.round(len + (target.length - len) * o.p); i++) out += `<span class="sc">${GLYPHS[(Math.random() * GLYPHS.length) | 0]}</span>`;
+        word.innerHTML = out;
+      }, onComplete: () => { word.textContent = target; } });
+    };
+    word.textContent = words[words.length - 1]; fit(); word.textContent = words[0];
+    nodes[0].classList.add('on');
+    const c = { v: 0 };
+    const tl = G.timeline({ defaults: { ease: 'expo.out' } });
+    tl.to('.ld-grid', { opacity: 1, duration: 1.2 }, 0)
+      .to(['.ld-top > *', '.ld-bot'], { opacity: 1, duration: 0.6, stagger: 0.05, ease: 'power2.out' }, 0.05)
+      .to('.ld-term', { opacity: 1, duration: 0.6, ease: 'power2.out' }, 0.1)
+      .to($$('.ld-l'), { opacity: 1, y: 0, duration: 0.5, stagger: 0.17 }, 0.2)
+      .to('.ld-kick', { opacity: 1, duration: 0.5, ease: 'power2.out' }, 0.25)
+      .to(word, { clipPath: 'inset(0 0 0% 0)', duration: 1, ease: 'expo.inOut' }, 0.2)
+      .to('.ld-sub .m > span', { y: 0, duration: 1, stagger: 0.12 }, 0.55)
+      .to(c, { v: 100, duration: 2.5, ease: 'power2.inOut', onUpdate: () => {
+        const v = c.v;
+        n.textContent = String(Math.round(v)).padStart(3, '0');
+        fill.style.transform = `scaleX(${v / 100})`;
+        packet.style.left = v + '%';
+        const s = v >= 99.5 ? 3 : v >= 66.6 ? 2 : v >= 33.3 ? 1 : 0;
+        if (s > stage) { for (let i = stage + 1; i <= s; i++) nodes[i].classList.add('on'); stage = s; render(words[s]); }
+      } }, 0.25)
+      // the UI node opens into the orange page
+      .add(() => {
+        const r = nodes[3].querySelector('i').getBoundingClientRect();
+        const x = r.left + r.width / 2, y = r.top + r.height / 2;
+        const R = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 20;
+        G.fromTo(burst, { clipPath: `circle(0px at ${x}px ${y}px)` }, { clipPath: `circle(${R}px at ${x}px ${y}px)`, duration: 1.05, ease: 'expo.inOut' });
+      }, 3.0)
+      .to('.ld-in', { opacity: 0, scale: 0.97, duration: 0.6, ease: 'power2.in' }, 3.15)
+      .add(() => { intro(); lenis?.start(); }, 3.75)
+      .to(loader, { opacity: 0, duration: 0.55, ease: 'power1.out' }, 3.8)
+      .set(loader, { display: 'none' });
+  }
+
   function enter() {
     if (!motion) { document.body.classList.add('is-in'); return; }
     if (!seen && loader) {
       lenis?.stop();
-      const n = $('[data-loader-n]'), bar = $('[data-loader-bar]');
-      const c = { v: 0 };
-      const tl = G.timeline();
-      tl.to($$('.loader-word .m > span'), { y: 0, duration: 1, stagger: 0.09 }, 0.1)
-        .to(c, { v: 100, duration: 1.7, ease: 'power2.inOut', onUpdate: () => { n.textContent = String(Math.round(c.v)).padStart(3, '0'); } }, 0)
-        .to(bar, { scaleX: 1, duration: 1.7, ease: 'power2.inOut' }, 0)
-        .to($$('.loader-word .m > span'), { y: '-105%', duration: 0.7, stagger: 0.05, ease: 'expo.in' }, 1.85)
-        .to(loader, { yPercent: -100, duration: 1.1, ease: 'expo.inOut' }, 2.35)
-        .add(() => { intro(); lenis?.start(); }, 2.55)
-        .set(loader, { display: 'none' });
+      runLoader();
+
     } else if (wipe) {
       G.set(wipe, { yPercent: 0 });
       G.to(wipe, { yPercent: -100, duration: 1, ease: 'expo.inOut', delay: 0.05, onStart: () => setTimeout(intro, 280) });
@@ -79,14 +127,15 @@
       tl.to($$('.hero-bg .blob', hero), { opacity: (i) => (i === 2 ? 0.35 : 0.7), duration: 1.6, stagger: 0.15 }, 0)
         .to('.hero-grid', { opacity: 1, duration: 1.4 }, 0.1)
         .fromTo($$('.hn-1 .ch > span', hero), { opacity: 0, filter: 'blur(26px)', y: 30, scale: 1.08 }, { opacity: 1, filter: 'blur(0px)', y: 0, scale: 1, duration: 1.5, stagger: 0.09 }, 0.35)
-        .fromTo('[data-hero-portrait]', { opacity: 0, filter: 'blur(18px)', y: 70, scale: 1.06 }, { opacity: 1, filter: 'blur(0px)', y: 0, scale: 1, duration: 1.8 }, 0.75)
+        .set('[data-hero-portrait]', { opacity: 1 }, 0.7)
+        .fromTo('[data-hp-reveal]', { clipPath: 'inset(100% -20% -20% -20%)', y: 90 }, { clipPath: 'inset(-20% -20% -20% -20%)', y: 0, duration: 1.7, ease: 'expo.out' }, 0.6)
         .fromTo($$('.hn-2 .ch > span', hero), { opacity: 0, filter: 'blur(20px)', y: 20 }, { opacity: 1, filter: 'blur(0px)', y: 0, duration: 1.3, stagger: 0.06 }, 1.0)
         .fromTo('[data-hero-ui]', { opacity: 0, y: 34, filter: 'blur(8px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.2, stagger: 0.12 }, 1.2)
         .add(() => {
           // portrait keeps breathing so the hero never sits still
-          G.to('.hp-in img', { y: -12, rotate: 0.6, duration: 3.2, ease: 'sine.inOut', yoyo: true, repeat: -1 });
-          G.to('.hc-proj .hc-img img', { scale: 1.08, duration: 5, ease: 'sine.inOut', yoyo: true, repeat: -1 });
-          G.set([...$$('.hn .ch > span', hero), '[data-hero-portrait]', ...$$('[data-hero-ui]', hero)], { filter: 'none' });
+          G.set('[data-hp-reveal]', { clipPath: 'none' });
+          G.to('[data-hp-breathe]', { y: -10, duration: 3.4, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+          G.set([...$$('.hn .ch > span', hero), ...$$('[data-hero-ui]', hero)], { filter: 'none' });
         });
     }
     const ph = $('[data-ph]');
@@ -327,8 +376,9 @@
   const hero = $('[data-hero]');
   if (hero) {
     mm.add('(min-width: 861px)', () => {
-      ST.create({ trigger: hero, start: 'top top', end: 'bottom top', pin: true, pinSpacing: false });
-      const tl = G.timeline({ scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: true } });
+      // one trigger pins the hero and drives its scroll scene (a second trigger on the pinned
+      // element measured its start a full screen late, so the scene never played)
+      const tl = G.timeline({ scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', pin: true, pinSpacing: false, scrub: true } });
       tl.to('.hn-1', { xPercent: -18, yPercent: -10, ease: 'none' }, 0)
         .to('.hn-2', { xPercent: 12, ease: 'none' }, 0)
         .to('[data-hero-portrait]', { yPercent: -8, scale: 0.9, ease: 'none' }, 0)

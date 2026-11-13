@@ -85,12 +85,34 @@ const NAV = [['Work', 'work/'], ['About', 'about/'], ['Contact', 'contact/']];
 
 const chrome = (page) => `
 <div class="loader" data-loader aria-hidden="true">
-  <div class="loader-in">
-    <p class="loader-top"><span>${person.name}</span><span>Portfolio ©${YEAR}</span></p>
-    <p class="loader-word"><span class="m"><span>Build</span></span> <span class="m"><span>reliable</span></span> <span class="m"><span><em>products</em></span></span></p>
-    <p class="loader-bot"><span>From API to interface</span><span class="loader-n" data-loader-n>000</span></p>
-    <span class="loader-bar"><i data-loader-bar></i></span>
+  <div class="ld-grid"></div>
+  <div class="ld-in">
+    <p class="ld-top"><span class="ld-brand"><span class="hdr-mark">RC</span>${person.name}</span><span class="ld-yr">Portfolio ©${YEAR}</span></p>
+    <div class="ld-mid">
+      <div class="ld-term">
+        <p class="ld-l" data-ld-line="0"><span class="ld-p">&gt;</span> <b>GET</b> /api/raj-chauhan</p>
+        <p class="ld-l" data-ld-line="1"><span class="ld-ok">200 OK</span> <span class="ld-dim">· 42 ms · application/json</span></p>
+        <p class="ld-l" data-ld-line="2">{</p>
+        <p class="ld-l ld-in2" data-ld-line="3">"role": <i>"${person.role}"</i>,</p>
+        <p class="ld-l ld-in2" data-ld-line="4">"builds": <i>["APIs", "AI", "interfaces"]</i>,</p>
+        <p class="ld-l ld-in2" data-ld-line="5">"status": <i>"${person.status.toLowerCase()}"</i></p>
+        <p class="ld-l" data-ld-line="6">}<span class="ld-caret"></span></p>
+      </div>
+      <div class="ld-head">
+        <p class="ld-kick"><span class="ld-kick-dot"></span>Rendering</p>
+        <p class="ld-word"><span class="ld-w" data-ld-word>API</span></p>
+        <p class="ld-sub"><span class="m"><span>From <b>API</b></span></span> <span class="m"><span>to <em>interface</em></span></span></p>
+      </div>
+    </div>
+    <div class="ld-bot">
+      <div class="ld-pipe">
+        <span class="ld-track"><i data-ld-fill></i><b class="ld-packet" data-ld-packet></b></span>
+        ${['API', 'Data', 'AI', 'UI'].map((t, i) => `<span class="ld-node" style="--x:${i / 3}" data-ld-node><i></i><small><span>0${i + 1} · </span>${t}</small></span>`).join('')}
+      </div>
+      <p class="ld-n"><span data-loader-n>000</span><small>%</small></p>
+    </div>
   </div>
+  <div class="ld-burst" data-ld-burst></div>
 </div>
 <div class="wipe" data-wipe aria-hidden="true"><span class="wipe-t">${person.name}</span></div>
 <div class="cursor" data-cursor aria-hidden="true"><span class="cursor-dot"></span><span class="cursor-ring"><em data-cursor-label></em></span></div>
@@ -259,7 +281,7 @@ function home() {
       <span class="hn hn-1" aria-hidden="true">${'RAJ'.split('').map((c) => `<span class="ch"><span>${c}</span></span>`).join('')}</span>
       <span class="hn hn-2" aria-hidden="true">${'CHAUHAN'.split('').map((c) => `<span class="ch"><span>${c}</span></span>`).join('')}</span>
     </h1>
-    <div class="hero-portrait" data-hero-portrait><div class="hp-in" data-mouse="14">${img('raj-portrait.webp', 'Illustrated portrait of Raj Chauhan', '', '(max-width: 760px) 100vw, 46vw', true)}</div></div>
+    <div class="hero-portrait" data-hero-portrait><div class="hp-rv" data-hp-reveal><div class="hp-in" data-mouse="14"><div class="hp-br" data-hp-breathe>${img('raj-portrait.webp', 'Illustrated portrait of Raj Chauhan', '', '(max-width: 760px) 100vw, 46vw', true)}</div></div></div></div>
     <div class="hero-intro" data-hero-ui>
       <p class="hi-role">${ast()}${person.role}</p>
       <p class="hi-text">I build reliable products from <em>API</em> to <em>interface</em>: backend systems, AI integrations and the screens people use.</p>
