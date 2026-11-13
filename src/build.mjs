@@ -177,7 +177,7 @@ const footer = () => `
       <div><small>Status</small><p><span class="pulse"></span>${person.status}</p><p class="dim">Junior Developer at Apex36</p></div>
       <button class="ftr-totop" type="button" data-totop>Back to top <span>↑</span></button>
     </div>
-    <p class="ftr-word" aria-hidden="true" data-ftr-word>${'RAJ CHAUHAN'.split('').map((c) => `<span><i>${c === ' ' ? '&nbsp;' : c}</i></span>`).join('')}</p>
+    <p class="ftr-word" aria-hidden="true" data-ftr-word>${'RAJ CHAUHAN'.split('').map((c, i) => `<span><i style="--i:${i}">${c === ' ' ? '&nbsp;' : c}</i></span>`).join('')}</p>
     <div class="ftr-bot"><span>© ${YEAR} ${person.name}</span><span>Built with care, code, and curiosity</span><button type="button" class="motion-t" data-motion-toggle aria-pressed="true">Motion: on</button></div>
   </div>
 </footer>`;
@@ -380,6 +380,7 @@ function home() {
         <div>${label('What I do')}${H('FROM API {TO INTERFACE}', 'h2', 'svc-h')}</div>
         <p class="svc-sub" data-fade>Five layers of one product. I build each of them, and usually all of them together.</p>
       </div>
+      <div class="svc-list-wrap"><span class="svc-rail" aria-hidden="true"><i data-svc-rail></i></span>
       <ol class="svc-list" data-svc-list>
         ${SVC.map((o, k) => { const s = services[o.i]; return `
         <li class="svc-item${k === 0 ? ' is-on' : ''}" data-svc-item style="--k:${k}">
@@ -391,10 +392,10 @@ function home() {
           <div class="svc-more"><div class="svc-more-in">
             <p class="svc-st">${s.statement}</p>
             <div class="tags">${s.tags.map(tag).join('')}</div>
-            <div class="svc-art" aria-hidden="true">${stCard(o.layer)}</div>
+            <div class="svc-art" aria-hidden="true" data-svc-art><span class="svc-node"></span>${stCard(o.layer)}</div>
           </div></div>
         </li>`; }).join('')}
-      </ol>
+      </ol></div>
     </div>
     <div class="svc-stage" data-svc-vis aria-hidden="true">
       <div class="svc-bg"><div class="svc-floor" data-svc-floor></div><div class="svc-horizon"></div>
@@ -411,6 +412,7 @@ function home() {
           <div class="st-tilt" data-st-tilt><div class="st-idle"><span class="st-glow"></span>${stCard(o.layer, true)}</div><span class="st-floor"></span></div>
         </div>`).join('')}
       </div></div>
+      <div class="svc-scrim svc-scrim-b"></div><div class="svc-scrim svc-scrim-t"></div>
       <div class="svc-info">
         ${SVC.map((o, k) => { const s = services[o.i]; return `<div class="svc-inf${k === 0 ? ' is-on' : ''}" data-svc-inf>
           <div class="si-l"><p class="si-k"><span class="m"><span>0${k + 1} · ${o.layer} · ${flowCaption[o.layer]}</span></span></p><p class="si-t"><span class="m"><span>${s.title}</span></span></p></div>

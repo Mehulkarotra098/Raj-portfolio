@@ -387,6 +387,24 @@
     el.addEventListener('pointerleave', () => { G.to(el, { rotateY: 0, rotateX: 0, z: 0, duration: 1.1, ease: 'elastic.out(1, .5)', overwrite: 'auto' }); deep.forEach((d) => G.to(d, { x: 0, y: 0, duration: 1.1, ease: 'elastic.out(1, .5)' })); });
   });
 
+  // touch screens: no hover to tilt with, so cards lean in 3D as they scroll through the screen
+  if (!fine) {
+    html.classList.add('touch3d');
+    const els = $$('.wk, .stat, .sk, .prin-c, .tl-body, .ct-card, .cs-media, .faq-it, .ab-photo');
+    const seen = new Set();
+    const io = new IntersectionObserver((es) => es.forEach((e) => (e.isIntersecting ? seen.add(e.target) : seen.delete(e.target))), { rootMargin: '15% 0px' });
+    els.forEach((el) => io.observe(el));
+    G.ticker.add(() => {
+      const vh = innerHeight;
+      seen.forEach((el) => {
+        const r = el.getBoundingClientRect(), off = Math.max(-1, Math.min(1, (r.top + r.height / 2 - vh * 0.5) / (vh * 0.6)));
+        const big = r.height > vh * 0.3 ? 0.55 : 1;
+        el.style.rotate = `x ${(off * 22 * big).toFixed(2)}deg`;
+        el.style.translate = `0 0 ${(-Math.abs(off) * 70 * big).toFixed(1)}px`;
+      });
+    });
+  }
+
   // custom cursor
   if (fine) {
     const cur = $('[data-cursor]'), dot = $('.cursor-dot', cur), ring = $('.cursor-ring', cur), lab = $('[data-cursor-label]');
@@ -563,6 +581,27 @@
       }
       return () => { G.ticker.remove(tick); off(); html.classList.remove('svc-on'); svc.classList.remove('is-live'); st = null; cur = -1; G.set([track, ...segs, ...sts], { clearProps: 'all' }); };
     });
+    // phones/tablets: the cards turn in 3D as they cross the screen, depth layers open in the middle,
+    // and the rail fills as you go down the flow
+    mm.add('(max-width: 1000px)', () => {
+      const arts = $$('[data-svc-art]', svc), rail = $('[data-svc-rail]', svc), wrap = $('.svc-list-wrap', svc);
+      const cards = arts.map((a) => $('.st-card', a));
+      const spin = () => {
+        const vh = innerHeight;
+        const wr = wrap.getBoundingClientRect();
+        rail.parentElement.style.setProperty('--rail', Math.max(0, Math.min(1, (vh * 0.6 - wr.top) / wr.height)).toFixed(3));
+        arts.forEach((a, i) => {
+          const r = a.getBoundingClientRect();
+          if (r.bottom < -100 || r.top > vh + 100) return;
+          const off = Math.max(-1.3, Math.min(1.3, (r.top + r.height / 2 - vh * 0.5) / (vh * 0.55)));
+          a.style.setProperty('--rx', (off * 26).toFixed(2) + 'deg');
+          a.style.setProperty('--ry', (-off * 16 + (i % 2 ? 6 : -6)).toFixed(2) + 'deg');
+          a.style.setProperty('--depth', Math.max(0.25, 1.35 - Math.abs(off) * 1.1).toFixed(3));
+        });
+      };
+      G.ticker.add(spin);
+      return () => { G.ticker.remove(spin); cards.forEach((c) => { c.style.transform = ''; }); };
+    });
     // card layout: run each graphic only while it's on screen
     if ('IntersectionObserver' in window) {
       const io = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle('in-view', e.isIntersecting)), { rootMargin: '0px 0px -10% 0px' });
@@ -582,7 +621,7 @@
     mm.add({ d: '(min-width: 861px)', m: '(max-width: 860px)' }, (ctx) => {
       const prop = ctx.conditions.d ? 'scaleX' : 'scaleY';
       G.set(fill, { scaleX: ctx.conditions.d ? 0 : 1, scaleY: ctx.conditions.d ? 1 : 0 });
-      G.to(fill, { [prop]: 1, ease: 'none', scrollTrigger: { trigger: $('.proc-row', proc), start: 'top 75%', end: 'bottom 55%', scrub: true, onUpdate: (s) => stepsEl.forEach((st, i) => st.classList.toggle('on', s.progress >= i / stepsEl.length + 0.02)) } });
+      G.to(fill, { [prop]: 1, ease: 'none', scrollTrigger: { trigger: $('.proc-row', proc), start: 'top 92%', end: 'bottom 72%', scrub: true, onUpdate: (s) => stepsEl.forEach((st, i) => st.classList.toggle('on', s.progress >= i / stepsEl.length + 0.02)) } });
     });
     // the whole row lies flat on the floor and stands up as it scrolls in
     mm.add('(min-width: 861px)', () => { G.fromTo($('.proc-row', proc), { rotateX: 58, y: 120, z: -160, transformOrigin: '50% 100%' }, { rotateX: 0, y: 0, z: 0, ease: 'none', scrollTrigger: { trigger: proc, start: 'top 95%', end: 'top 25%', scrub: true } }); });
@@ -620,6 +659,12 @@
 
   // CASE STUDIES: media zooms out of depth as it scrolls
   $$('.cs-media-in').filter((m) => m.querySelector(':scope > img')).forEach((m) => G.fromTo(m, { scale: 1.18 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: m.parentElement, start: 'top bottom', end: 'center center', scrub: true } }));
+
+  // panels (pipeline rows, chat bubbles) build up line by line in 3D when they come into view
+  $$('.pnl-pipe, .pnl-chat').forEach((p) => {
+    const rows = $$('.pp-row, .bub, .pp-h, .ch-h', p);
+    G.fromTo(rows, { opacity: 0, y: 26, rotateX: -50, transformPerspective: 700, transformOrigin: '50% 0%' }, { opacity: 1, y: 0, rotateX: 0, duration: 1, stagger: 0.09, ease: 'expo.out', clearProps: 'transform', scrollTrigger: { trigger: p, start: 'top 80%', once: true } });
+  });
 
   // WORK PAGE: image preview that follows the cursor over the index
   const float = $('[data-preview-float]');
