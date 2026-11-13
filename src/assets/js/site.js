@@ -428,15 +428,36 @@
   }
 
   // CAPABILITIES: sticky stack, earlier cards recede as the next arrives
-  const caps = $$('[data-cap]');
-  if (caps.length) mm.add('(min-width: 861px)', () => {
-    caps.forEach((c, i) => {
-      const next = caps[i + 1];
-      if (!next) return;
-      G.to($('.cap-in', c), { scale: 0.9, yPercent: -3, filter: 'brightness(.7)', ease: 'none', scrollTrigger: { trigger: next, start: 'top bottom', end: 'top 20%', scrub: true } });
+  // WHAT I DO: pinned on desktop; scrolling builds the stack one layer at a time, from API to interface
+  const svc = $('[data-svc]');
+  if (svc) {
+    const items = $$('[data-svc-item]', svc), slabs = $$('[data-slab]', svc), cards = $$('[data-svc-card]', svc);
+    const num = $('[data-svc-num]', svc), name = $('[data-svc-name]', svc), list = $('[data-svc-list]', svc);
+    const N = items.length;
+    let cur = -1, st = null;
+    const set = (k) => {
+      if (k === cur) return; cur = k;
+      items.forEach((el, i) => { el.classList.toggle('is-on', i === k); el.classList.toggle('is-done', i < k); $('.svc-row', el).setAttribute('aria-expanded', i === k); });
+      slabs.forEach((el, i) => { el.classList.toggle('is-on', i === k); el.classList.toggle('is-done', i < k); el.classList.toggle('is-next', i > k); });
+      cards.forEach((el, i) => el.classList.toggle('is-on', i === k));
+      num.textContent = '0' + (k + 1); name.textContent = $('.svc-layer', items[k]).textContent;
+      list.style.setProperty('--p', (k + 1) / N);
+    };
+    mm.add('(min-width: 1001px)', () => {
+      svc.classList.add('is-live');
+      set(0);
+      st = ST.create({ trigger: svc, start: 'top top', end: () => '+=' + innerHeight * (N - 0.4) * 0.75, pin: $('[data-svc-pin]', svc), scrub: false,
+        onUpdate: (self) => set(Math.min(N - 1, Math.floor(self.progress * N * 0.999))) });
+      // parallax on the stack while it's pinned
+      const tw = G.fromTo('.svc-iso', { rotateX: 57, rotateZ: -46 }, { rotateX: 57, rotateZ: -34, ease: 'none', scrollTrigger: { trigger: svc, start: 'top top', end: () => '+=' + innerHeight * (N - 0.4) * 0.75, scrub: true } });
+      return () => { svc.classList.remove('is-live'); st = null; tw.scrollTrigger?.kill(); tw.kill(); cur = -1; };
     });
-  });
-  caps.forEach((c) => G.from($('.cap-r', c), { clipPath: 'inset(0 0 100% 0 round 18px)', duration: 1.4, ease: 'expo.inOut', scrollTrigger: { trigger: c, start: 'top 75%', once: true } }));
+    // clicking a layer jumps to it
+    $$('[data-svc-go]', svc).forEach((b) => b.addEventListener('click', () => {
+      const k = +b.dataset.svcGo;
+      if (st) scrollTo(st.start + (st.end - st.start) * ((k + 0.5) / N), { offset: 0 });
+    }));
+  }
 
   // PROCESS: line draws, steps light up
   const proc = $('[data-proc]');

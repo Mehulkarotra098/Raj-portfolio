@@ -78,6 +78,16 @@ df.${fn('to_json')}(${st('"site/data.json"')}, orient=${st('"records"')})`),
     ${[['Resume parsed', '✓'], ['Portals searched', '4'], ['Jobs scored', '38'], ['Tailored drafts', '6'], ['Applied (you confirmed)', '3']].map(([a, b], i) => `<p class="pp-row" style="--i:${i}"><span>${a}</span><b>${b}</b></p>`).join('')}
     <p class="pp-note">Illustrative numbers</p></div>`,
 };
+// "What I do" runs bottom-up through the stack: from API to interface
+const SVC = [
+  { i: 0, layer: 'API', panel: 'api' },
+  { i: 3, layer: 'Cloud', panel: 'lambda' },
+  { i: 4, layer: 'Data', panel: 'data' },
+  { i: 1, layer: 'AI', panel: 'llm' },
+  { i: 2, layer: 'UI', panel: 'ui' },
+];
+// small stack icon for the stacked (phone) layout: the current layer is orange
+const svcMini = (k) => `<svg class="svc-mini" viewBox="0 0 64 64" aria-hidden="true">${[0, 1, 2, 3, 4].map((j) => `<path d="M32 ${12 + (4 - j) * 8}l24 9-24 9-24-9z" class="${j === k ? 'on' : j < k ? 'done' : ''}"/>`).join('')}</svg>`;
 const projMedia = (p, which = 'img') => p.img ? img(which === 'crop' ? p.crop : p.img, p.alt, '', '(max-width: 760px) 92vw, 60vw') : panels[p.art]();
 
 // ---------- shared chrome ----------
@@ -291,7 +301,7 @@ function home() {
       <span class="hc-meta"><span>${ast()} ${projects[0].name}</span><span>Live ↗</span></span></span>
     </a>
     <a class="hero-card hc-talk" href="{R}contact/" data-hero-ui><span class="hc-in" data-mouse="-12">
-      <span class="hc-face">${img('raj-face.webp', '', '', '60px', true)}</span>
+      <span class="hc-face hc-mark">${ast()}</span>
       <span class="hc-t"><small><span class="pulse"></span>${person.status}</small><strong>Let’s talk</strong></span>
       <span class="hc-arr">${arrow}</span></span>
     </a>
@@ -344,23 +354,40 @@ function home() {
   </div>
 </section>
 
-<section class="caps sec" id="services">
-  <div class="wrap">
-    <div class="sec-hd">${label('What I do')}${H('FROM API {TO INTERFACE}')}<p class="sec-sub" data-fade>Five things I do well, usually together on the same product.</p></div>
-  </div>
-  <div class="caps-stack wrap">
-    ${services.map((s, i) => `
-    <article class="cap" data-cap>
-      <div class="cap-in">
-        <div class="cap-l">
-          <p class="cap-n">${s.n}<span>/0${services.length}</span></p>
-          <h3>${s.title}</h3>
-          <p class="cap-st">${s.statement}</p>
-          <div class="tags">${s.tags.map(tag).join('')}</div>
-        </div>
-        <div class="cap-r">${[panels.api, panels.llm, panels.ui, panels.lambda, panels.data][i]()}</div>
+<section class="svc" id="services" data-svc>
+  <div class="svc-pin" data-svc-pin>
+    <div class="wrap svc-in">
+      <div class="svc-hd">
+        <div>${label('What I do')}${H('FROM API {TO INTERFACE}', 'h2', 'svc-h')}</div>
+        <p class="svc-sub" data-fade>Five layers of one product. I build each of them, and usually all of them together.</p>
       </div>
-    </article>`).join('')}
+      <div class="svc-body">
+        <ol class="svc-list" data-svc-list>
+          ${SVC.map((o, k) => { const s = services[o.i]; return `
+          <li class="svc-item${k === 0 ? ' is-on' : ''}" data-svc-item style="--k:${k}">
+            <button class="svc-row" type="button" data-svc-go="${k}" aria-expanded="${k === 0}">
+              <span class="svc-n">0${k + 1}</span>
+              <span class="svc-t">${s.title}</span>
+              <span class="svc-layer">${o.layer}</span>
+            </button>
+            <div class="svc-more"><div class="svc-more-in">
+              <p class="svc-st">${s.statement}</p>
+              <div class="tags">${s.tags.map(tag).join('')}</div>
+              <div class="svc-code">${svcMini(k)}${panels[o.panel]()}</div>
+            </div></div>
+          </li>`; }).join('')}
+        </ol>
+        <div class="svc-vis" aria-hidden="true">
+          <div class="svc-vis-grid"></div>
+          <p class="svc-read"><span class="svc-read-dot"></span>Layer <b data-svc-num>01</b> / 05 · <b data-svc-name>${SVC[0].layer}</b></p>
+          <div class="svc-stack"><div class="svc-iso">
+            ${SVC.map((o, k) => `<div class="slab${k === 0 ? ' is-on' : ''}" style="--k:${k}" data-slab><span class="slab-lo"></span><span class="slab-face"><b>${o.layer}</b><small>0${k + 1}</small><i></i><i></i><i></i></span></div>`).join('')}
+          </div><div class="svc-glow"></div></div>
+          <div class="svc-cards">${SVC.map((o, k) => `<div class="svc-card${k === 0 ? ' is-on' : ''}" data-svc-card>${panels[o.panel]()}</div>`).join('')}</div>
+          <p class="svc-hint"><span></span>Scroll to build the stack</p>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
