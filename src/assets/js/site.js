@@ -89,16 +89,44 @@
       .set(loader, { display: 'none' });
   }
 
+  // ---------- page transition: two curtains (ink, then orange) carrying the name ----------
+  const wipeLayers = () => [$('[data-wipe-dk]'), $('[data-wipe-or]')];
+  const wipeChars = () => $$('.wipe-t .wc > span');
+  function wipeOut(label, done) {
+    const [dk, or] = wipeLayers(), to = $('[data-wipe-to]'), n = $('[data-wipe-n]');
+    if (to) to.textContent = label;
+    try { sessionStorage.setItem('rc-to', label); } catch (e) { /* storage blocked */ }
+    const c = { v: 0 };
+    const tl = G.timeline({ onComplete: done });
+    tl.fromTo(dk, { yPercent: 101 }, { yPercent: 0, duration: 0.65, ease: 'expo.inOut' }, 0)
+      .fromTo(or, { yPercent: 101 }, { yPercent: 0, duration: 0.65, ease: 'expo.inOut' }, 0.08)
+      .fromTo(wipeChars(), { yPercent: 115, rotateX: -70, opacity: 0 }, { yPercent: 0, rotateX: 0, opacity: 1, duration: 0.7, stagger: 0.03, ease: 'expo.out' }, 0.32)
+      .fromTo('.wipe-top, .wipe-to', { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.06, ease: 'power2.out' }, 0.4)
+      .fromTo('[data-wipe-bar]', { scaleX: 0 }, { scaleX: 1, duration: 0.65, ease: 'power2.inOut' }, 0.3)
+      .to(c, { v: 99, duration: 0.65, ease: 'power2.inOut', onUpdate: () => { if (n) n.textContent = String(Math.round(c.v)).padStart(2, '0'); } }, 0.3)
+      .to(wipeChars(), { yPercent: -8, duration: 0.25, stagger: { each: 0.02, yoyo: true, repeat: 1 }, ease: 'sine.inOut' }, 0.85);
+  }
+  function wipeIn() {
+    const [dk, or] = wipeLayers(), to = $('[data-wipe-to]'), n = $('[data-wipe-n]');
+    try { const l = sessionStorage.getItem('rc-to'); if (l && to) to.textContent = l; } catch (e) { /* storage blocked */ }
+    if (n) n.textContent = '100';
+    G.set([dk, or], { yPercent: 0 }); G.set('[data-wipe-bar]', { scaleX: 1 });
+    G.timeline()
+      .to(wipeChars(), { yPercent: -115, rotateX: 70, opacity: 0, duration: 0.55, stagger: 0.025, ease: 'expo.in' }, 0.05)
+      .to('.wipe-top, .wipe-to', { opacity: 0, y: -10, duration: 0.35, ease: 'power2.in' }, 0.1)
+      .to(or, { yPercent: -101, duration: 0.95, ease: 'expo.inOut' }, 0.35)
+      .to(dk, { yPercent: -101, duration: 0.95, ease: 'expo.inOut' }, 0.47)
+      .add(intro, 0.75);
+  }
+
   function enter() {
     if (!motion) { document.body.classList.add('is-in'); return; }
     if (!seen && loader) {
       lenis?.stop();
       runLoader();
 
-    } else if (wipe) {
-      G.set(wipe, { yPercent: 0 });
-      G.to(wipe, { yPercent: -100, duration: 1, ease: 'expo.inOut', delay: 0.05, onStart: () => setTimeout(intro, 280) });
-    } else intro();
+    } else if (wipe) wipeIn();
+    else intro();
   }
 
   // page-leave wipe for internal links
@@ -111,9 +139,10 @@
     if (url.protocol === 'mailto:') return;
     e.preventDefault();
     closeMenu(true);
-    G.fromTo(wipe, { yPercent: 100 }, { yPercent: 0, duration: 0.75, ease: 'expo.inOut', onComplete: () => { location.href = url.href; } });
+    const label = (a.textContent || '').trim().replace(/\s+/g, ' ').split(' ').slice(0, 2).join(' ') || 'page';
+    wipeOut(label, () => { location.href = url.href; });
   });
-  addEventListener('pageshow', (e) => { if (e.persisted && wipe && motion) G.set(wipe, { yPercent: -100 }); });
+  addEventListener('pageshow', (e) => { if (e.persisted && wipe && motion) G.set(wipeLayers(), { yPercent: -101 }); });
 
   // ---------- intro (hero) ----------
   function intro() {
@@ -428,49 +457,91 @@
   }
 
   // CAPABILITIES: sticky stack, earlier cards recede as the next arrives
-  // WHAT I DO: pinned on desktop; scrolling builds the stack one layer at a time, from API to interface
+  // WHAT I DO: pinned on desktop; the camera pans along a flow of five stations (API → Cloud → Data → AI → UI),
+  // a glowing pipe fills between them and data packets run along it
   const svc = $('[data-svc]');
   if (svc) {
-    const items = $$('[data-svc-item]', svc), slabs = $$('[data-slab]', svc), cards = $$('[data-svc-card]', svc);
+    const items = $$('[data-svc-item]', svc), sts = $$('[data-st]', svc);
     const num = $('[data-svc-num]', svc), name = $('[data-svc-name]', svc), list = $('[data-svc-list]', svc);
+    const flow = $('[data-flow]', svc), track = $('[data-flow-track]', svc), pipe = $('[data-flow-pipe]', svc);
+    const base = $('[data-fp-base]', svc), segs = $$('[data-fp-seg]', svc), pks = $$('[data-fpk]', svc);
     const N = items.length;
     let cur = -1, st = null;
     const set = (k) => {
       if (k === cur) return; cur = k;
       items.forEach((el, i) => { el.classList.toggle('is-on', i === k); el.classList.toggle('is-done', i < k); $('.svc-row', el).setAttribute('aria-expanded', i === k); });
-      slabs.forEach((el, i) => { el.classList.toggle('is-on', i === k); el.classList.toggle('is-done', i < k); el.classList.toggle('is-next', i > k); });
-      cards.forEach((el, i) => el.classList.toggle('is-on', i === k));
+      sts.forEach((el, i) => { el.classList.toggle('is-on', i === k); el.style.setProperty('--side', i < k ? 1 : i > k ? -1 : 0); });
       num.textContent = '0' + (k + 1); name.textContent = $('.svc-layer', items[k]).textContent;
       list.style.setProperty('--p', (k + 1) / N);
     };
+    // the pipe: an S-curve from each card's right port to the next card's left port. Ports live inside the
+    // 3D cards, so the pipe is re-measured every frame while the scene is on screen and always meets them.
+    const portsL = sts.map((el) => $('[data-port-l]', el)), portsR = sts.map((el) => $('[data-port-r]', el));
+    const flowLine = $('[data-fp-flow]', svc);
+    const drawPipe = () => {
+      const tr = track.getBoundingClientRect();
+      const c = (el) => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2 - tr.left, r.top + r.height / 2 - tr.top]; };
+      const L = portsL.map(c), R = portsR.map(c);
+      const W = track.offsetWidth, H = track.offsetHeight;
+      pipe.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      const segD = R.slice(0, -1).map(([ox, oy], k) => {
+        const [ix, iy] = L[k + 1], d = Math.max(40, (ix - ox) * 0.5), dy = (k % 2 ? -1 : 1) * H * 0.2;
+        return `C${(ox + d).toFixed(1)} ${(oy + dy).toFixed(1)} ${(ix - d).toFixed(1)} ${(iy - dy).toFixed(1)} ${ix.toFixed(1)} ${iy.toFixed(1)}`;
+      });
+      segD.forEach((d, k) => segs[k].setAttribute('d', `M${R[k][0].toFixed(1)} ${R[k][1].toFixed(1)}${d}`));
+      let full = `M${(L[0][0] - W * 0.25).toFixed(1)} ${L[0][1].toFixed(1)}L${L[0][0].toFixed(1)} ${L[0][1].toFixed(1)}M${R[0][0].toFixed(1)} ${R[0][1].toFixed(1)}`;
+      segD.forEach((d, k) => { full += (k ? `M${R[k][0].toFixed(1)} ${R[k][1].toFixed(1)}` : '') + d; });
+      const last = R[N - 1];
+      full += `M${last[0].toFixed(1)} ${last[1].toFixed(1)}L${(last[0] + W * 0.25).toFixed(1)} ${last[1].toFixed(1)}`;
+      base.setAttribute('d', full); flowLine.setAttribute('d', full);
+      // packets ride the joined path only (no jumps across a card)
+      const joined = `M${R[0][0].toFixed(1)} ${R[0][1].toFixed(1)}` + segD.map((d, k) => d + (k < segD.length - 1 ? `L${R[k + 1][0].toFixed(1)} ${R[k + 1][1].toFixed(1)}` : '')).join('');
+      pks.forEach((pk) => { pk.style.offsetPath = `path("${joined}")`; });
+      flow.classList.add('has-path');
+    };
+    // coverflow: every station's offset from the camera drives its turn, depth and fade
+    const place = (t) => sts.forEach((el, k) => {
+      const off = k - t, a = Math.abs(off);
+      el.style.setProperty('--off', off.toFixed(3)); el.style.setProperty('--aoff', a.toFixed(3));
+      el.style.setProperty('--depth', Math.max(0.15, 1.5 - a * 1.6).toFixed(3));
+      el.classList.toggle('is-done', k < t - 0.5);
+    });
     mm.add('(min-width: 1001px)', () => {
       svc.classList.add('is-live');
       set(0);
-      const iso = $('[data-svc-iso]', svc), beams = $$('.beam', svc), tilt = $('[data-svc-tilt]', svc), stage = $('.svc-vis', svc);
-      // one scrubbed timeline, one unit per layer: each new layer falls into place, light beams
-      // climb through the built layers, the stack turns, and the last layer opens into an exploded view
+      const sw = () => flow.clientWidth * 0.62;
+      place(0); requestAnimationFrame(drawPipe);
       const tl = G.timeline({ defaults: { ease: 'none' } });
-      tl.fromTo(iso, { '--rz': -50 }, { '--rz': -30, duration: N }, 0);
-      slabs.forEach((sl, k) => { if (k) tl.fromTo(sl, { '--drop': 1 }, { '--drop': 0, duration: 0.55, ease: 'power3.out' }, k - 1 + 0.3); });
-      for (let k = 1; k < N; k++) tl.to(beams, { '--grow': k / (N - 1), duration: 0.45, ease: 'power2.out' }, k - 1 + 0.55);
-      tl.fromTo(iso, { '--spread': 1 }, { '--spread': 1.22, duration: 0.7, ease: 'power2.inOut' }, N - 0.95);
-      G.set(beams, { '--grow': 0 });
-      st = ST.create({ trigger: svc, start: 'top top', end: () => '+=' + innerHeight * (N - 0.4) * 0.8, pin: $('[data-svc-pin]', svc), animation: tl, scrub: 0.8,
-        onUpdate: (self) => set(Math.min(N - 1, Math.floor(self.progress * N * 0.999))) });
-      // mouse tilt on the stage
+      for (let k = 0; k < N - 1; k++) {
+        tl.to(track, { x: () => -(k + 1) * sw(), duration: 1, ease: 'power2.inOut' }, k)
+          .fromTo(segs[k], { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.75, ease: 'power1.inOut' }, k + 0.1);
+      }
+      tl.to({}, { duration: 0.25 });
+      st = ST.create({ trigger: svc, start: 'top top', end: () => '+=' + innerHeight * (N - 0.5) * 0.85, pin: $('[data-svc-pin]', svc), animation: tl, scrub: 0.9, invalidateOnRefresh: true,
+        onRefresh: drawPipe });
+      tl.eventCallback('onUpdate', () => { const t = Math.min(N - 1, tl.time()); place(t); set(Math.max(0, Math.min(N - 1, Math.round(t - 0.2)))); });
+      // keep the pipe glued to the moving 3D ports while the scene is on screen
+      const tick = () => { if (st && st.isActive) drawPipe(); };
+      G.ticker.add(tick);
       let off = () => {};
       if (fine) {
-        const move = (e) => { const r = stage.getBoundingClientRect(); const dx = (e.clientX - r.left) / r.width - 0.5, dy = (e.clientY - r.top) / r.height - 0.5; G.to(tilt, { '--ty': dx * 10, '--tx': -dy * 8, duration: 1.2, ease: 'power3.out', overwrite: 'auto' }); };
-        const leave = () => G.to(tilt, { '--ty': 0, '--tx': 0, duration: 1.4, ease: 'power3.out', overwrite: 'auto' });
+        const stage = $('[data-svc-vis]', svc);
+        const move = (e) => { const r = stage.getBoundingClientRect(); const dx = (e.clientX - r.left) / r.width - 0.5, dy = (e.clientY - r.top) / r.height - 0.5; G.to(sts, { '--ty': dx * 18, '--tx': -dy * 14, duration: 1, ease: 'power3.out', overwrite: 'auto' }); };
+        const leave = () => G.to(sts, { '--ty': 0, '--tx': 0, duration: 1.2, ease: 'power3.out', overwrite: 'auto' });
         stage.addEventListener('pointermove', move); stage.addEventListener('pointerleave', leave);
         off = () => { stage.removeEventListener('pointermove', move); stage.removeEventListener('pointerleave', leave); };
       }
-      return () => { off(); svc.classList.remove('is-live'); st = null; cur = -1; G.set([iso, ...slabs, ...beams, tilt], { clearProps: 'all' }); };
+      return () => { G.ticker.remove(tick); off(); svc.classList.remove('is-live'); st = null; cur = -1; G.set([track, ...segs, ...sts], { clearProps: 'all' }); };
     });
+    // card layout: run each graphic only while it's on screen
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle('in-view', e.isIntersecting)), { rootMargin: '0px 0px -10% 0px' });
+      items.forEach((el) => io.observe(el));
+    } else items.forEach((el) => el.classList.add('in-view'));
     // clicking a layer jumps to it
     $$('[data-svc-go]', svc).forEach((b) => b.addEventListener('click', () => {
       const k = +b.dataset.svcGo;
-      if (st) scrollTo(st.start + (st.end - st.start) * ((k + 0.5) / N), { offset: 0 });
+      if (st) scrollTo(st.start + (st.end - st.start) * Math.min(1, (k + 0.05) / (N - 0.75)), { offset: 0 });
     }));
   }
 

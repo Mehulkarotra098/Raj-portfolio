@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { person, stack, experience, education, projects, services, process as steps, principles, faq, skillGroups } from './content.mjs';
 import { icons } from './icons.mjs';
+import { flowArt, flowCaption } from './flowart.mjs';
 
 const SRC = path.dirname(new URL(import.meta.url).pathname);
 const DIST = path.resolve(SRC, '..', 'dist');
@@ -86,16 +87,6 @@ const SVC = [
   { i: 1, layer: 'AI', panel: 'llm' },
   { i: 2, layer: 'UI', panel: 'ui' },
 ];
-// line art drawn on each layer's top face (viewBox 100×100, top part of the slab)
-const slabArt = {
-  API: `<svg class="slab-art" viewBox="0 0 100 100">${[14, 28, 42].map((y, i) => `<rect class="fa" x="12" y="${y}" width="${[16, 20, 14][i]}" height="8" rx="2"/><rect class="fl" x="${[32, 36, 30][i]}" y="${y + 2}" width="${[44, 30, 50][i]}" height="4" rx="2"/>`).join('')}</svg>`,
-  Cloud: `<svg class="slab-art" viewBox="0 0 100 100"><path class="fs" d="M24 40 50 18 78 34M50 18 52 50M24 40 52 50 78 34"/>${[[24, 40], [50, 18], [78, 34], [52, 50]].map(([x, y], i) => `<circle class="${i === 1 ? 'fa' : 'fn'}" cx="${x}" cy="${y}" r="${i === 1 ? 7 : 5}"/>`).join('')}</svg>`,
-  Data: `<svg class="slab-art" viewBox="0 0 100 100">${[22, 34, 16, 40, 28, 46].map((h, i) => `<rect class="${i === 5 ? 'fa' : 'fl'}" x="${14 + i * 12}" y="${58 - h}" width="8" height="${h}" rx="2"/>`).join('')}<path class="fs" d="M12 60h76"/></svg>`,
-  AI: `<svg class="slab-art" viewBox="0 0 100 100"><path class="fs" d="${[[20, 18], [20, 38], [20, 58]].flatMap(([x1, y1]) => [[50, 12], [50, 30], [50, 48], [50, 64]].map(([x2, y2]) => `M${x1} ${y1}L${x2} ${y2}`)).join('')}${[[50, 12], [50, 30], [50, 48], [50, 64]].flatMap(([x1, y1]) => [[80, 26], [80, 50]].map(([x2, y2]) => `M${x1} ${y1}L${x2} ${y2}`)).join('')}"/>${[[20, 18], [20, 38], [20, 58], [50, 12], [50, 30], [50, 48], [50, 64], [80, 26], [80, 50]].map(([x, y], i) => `<circle class="${i > 6 ? 'fa' : 'fn'}" cx="${x}" cy="${y}" r="4"/>`).join('')}</svg>`,
-  UI: `<svg class="slab-art" viewBox="0 0 100 100"><rect class="fs" x="10" y="8" width="80" height="56" rx="5"/><path class="fs" d="M10 18h80M30 18v46"/><rect class="fa" x="36" y="24" width="22" height="16" rx="3"/><rect class="fl" x="62" y="24" width="22" height="16" rx="3"/><rect class="fl" x="36" y="44" width="48" height="6" rx="3"/><rect class="fl" x="15" y="24" width="10" height="4" rx="2"/><rect class="fl" x="15" y="32" width="10" height="4" rx="2"/></svg>`,
-};
-// small stack icon for the stacked (phone) layout: the current layer is orange
-const svcMini = (k) => `<svg class="svc-mini" viewBox="0 0 64 64" aria-hidden="true">${[0, 1, 2, 3, 4].map((j) => `<path d="M32 ${12 + (4 - j) * 8}l24 9-24 9-24-9z" class="${j === k ? 'on' : j < k ? 'done' : ''}"/>`).join('')}</svg>`;
 const projMedia = (p, which = 'img') => p.img ? img(which === 'crop' ? p.crop : p.img, p.alt, '', '(max-width: 760px) 92vw, 60vw') : panels[p.art]();
 
 // ---------- shared chrome ----------
@@ -132,7 +123,18 @@ const chrome = (page) => `
   </div>
   <div class="ld-burst" data-ld-burst></div>
 </div>
-<div class="wipe" data-wipe aria-hidden="true"><span class="wipe-t">${person.name}</span></div>
+<div class="wipe" data-wipe aria-hidden="true">
+  <div class="wipe-l wipe-dk" data-wipe-dk></div>
+  <div class="wipe-l wipe-or" data-wipe-or>
+    <div class="wipe-mq" aria-hidden="true"><div class="wipe-mq-in">${Array(6).fill(`<span>${person.name}</span>${ast()}<span>Full stack</span>${ast()}`).join('')}</div></div>
+    <div class="wipe-in">
+      <p class="wipe-top"><span><span class="hdr-mark">RC</span>Portfolio ©${YEAR}</span><span class="wipe-n" data-wipe-n>00</span></p>
+      <p class="wipe-t" aria-label="${person.name}">${person.name.split('').map((c) => c === ' ' ? '<span class="wsp"></span>' : `<span class="wc"><span>${c}</span></span>`).join('')}</p>
+      <p class="wipe-to"><span class="wipe-dot"></span>Opening <b data-wipe-to></b></p>
+      <span class="wipe-bar"><i data-wipe-bar></i></span>
+    </div>
+  </div>
+</div>
 <div class="cursor" data-cursor aria-hidden="true"><span class="cursor-dot"></span><span class="cursor-ring"><em data-cursor-label></em></span></div>
 <header class="hdr" data-hdr>
   <a class="hdr-brand" href="{R}" aria-label="${person.name}, home"><span class="hdr-mark">RC</span><span class="hdr-name">${person.name}</span></a>
@@ -381,20 +383,22 @@ function home() {
             <div class="svc-more"><div class="svc-more-in">
               <p class="svc-st">${s.statement}</p>
               <div class="tags">${s.tags.map(tag).join('')}</div>
-              <div class="svc-code">${svcMini(k)}${panels[o.panel]()}</div>
+              <div class="svc-art" aria-hidden="true"><div class="st-card">${flowArt[o.layer]()}</div></div>
             </div></div>
           </li>`; }).join('')}
         </ol>
-        <div class="svc-vis" aria-hidden="true">
+        <div class="svc-vis" aria-hidden="true" data-svc-vis>
           <div class="svc-vis-grid"></div>
-          <p class="svc-read"><span class="svc-read-dot"></span>Layer <b data-svc-num>01</b> / 05 · <b data-svc-name>${SVC[0].layer}</b></p>
-          <div class="svc-stack" data-svc-stack><div class="svc-glow"></div><div class="svc-tilt" data-svc-tilt><div class="svc-iso" data-svc-iso>
-            <div class="svc-floor"></div>
-            ${SVC.map((o, k) => `<div class="slab${k === 0 ? ' is-on' : ''}" style="--k:${k}" data-slab><div class="slab-in">${[5, 4, 3, 2, 1].map((e) => `<span class="slab-ex" style="--e:${e}"></span>`).join('')}<span class="slab-face">${slabArt[o.layer]}<b>${o.layer}</b><small>0${k + 1}</small></span></div></div>`).join('')}
-            <div class="svc-beams" data-svc-beams>${[0, 1, 2].map((b) => `<i class="beam" style="--b:${b}"><em></em></i>`).join('')}</div>
-          </div></div></div>
-          <div class="svc-cards">${SVC.map((o, k) => `<div class="svc-card${k === 0 ? ' is-on' : ''}" data-svc-card>${panels[o.panel]()}</div>`).join('')}</div>
-          <p class="svc-hint"><span></span>Scroll to build the stack</p>
+          <p class="svc-read"><span class="svc-read-dot"></span>Step <b data-svc-num>01</b> / 05 · <b data-svc-name>${SVC[0].layer}</b></p>
+          <div class="flow" data-flow><div class="flow-track" data-flow-track>
+            <svg class="flow-pipe" data-flow-pipe><path class="fp-base" data-fp-base/><path class="fp-flow" data-fp-flow/>${SVC.slice(1).map(() => '<path class="fp-seg" data-fp-seg pathLength="1"/>').join('')}</svg>
+            ${[0, 1, 2, 3, 4, 5].map((i) => `<i class="flow-pk" data-fpk style="--i:${i}"></i>`).join('')}
+            ${SVC.map((o, k) => `<div class="st${k === 0 ? ' is-on' : ''}" data-st style="--k:${k}">
+              <div class="st-tilt" data-st-tilt><div class="st-card">${flowArt[o.layer]()}<span class="port port-l" data-port-l></span><span class="port port-r" data-port-r></span></div><span class="st-floor"></span></div>
+              <p class="st-cap"><b>0${k + 1}</b>${o.layer}<span>${flowCaption[o.layer]}</span></p>
+            </div>`).join('')}
+          </div></div>
+          <p class="svc-hint"><span></span>Scroll to follow the flow</p>
         </div>
       </div>
     </div>
